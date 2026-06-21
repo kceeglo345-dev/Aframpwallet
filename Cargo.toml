@@ -1,0 +1,14 @@
+[workspace]
+resolver = "3"
+members = ["contracts", "circuits", "wallet-core", "wallet-wasm", "wallet-server", "tools"]
+
+[workspace.dependencies]
+soroban-sdk = "21.0.0"
+ark-bls12-381 = "0.4.0"
+ark-groth16 = "0.4.0"
+ark-serialize = "0.4.0"
+ark-relations = "0.4.0"
+ark-std = "0.4.0"
+ark-ff = "0.4.0"
+rand = "0.8"
+wasm-bindgen = "0.2"

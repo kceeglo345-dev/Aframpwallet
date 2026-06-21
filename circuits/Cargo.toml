@@ -1,0 +1,21 @@
+[package]
+name = "circuits"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["lib"]
+doctest = false
+
+[dependencies]
+ark-bls12-381 = { workspace = true }
+ark-groth16 = { workspace = true }
+ark-relations = { workspace = true }
+ark-std = { workspace = true }
+ark-ff = { workspace = true }
+ark-serialize = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]
+ark-bls12-381 = { workspace = true }
+ark-std = { workspace = true }

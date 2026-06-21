@@ -1,0 +1,12 @@
+[package]
+name = "wallet-wasm"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+doctest = false
+
+[dependencies]
+wallet-core = { path = "../wallet-core" }
+wasm-bindgen = { workspace = true }
