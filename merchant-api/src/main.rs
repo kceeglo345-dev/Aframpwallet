@@ -391,6 +391,63 @@ async fn submit_to_contract(
     }
 }
 
+#[derive(Deserialize)]
+struct InitContractRequest {
+    seed: String,
+}
+
+#[derive(Serialize)]
+struct InitContractResponse {
+    success: bool,
+    tx_hash: Option<String>,
+    error: Option<String>,
+}
+
+async fn init_contract(
+    State(state): State<AppState>,
+    Json(req): Json<InitContractRequest>,
+) -> Json<InitContractResponse> {
+    let contract_id = match &state.contract_id {
+        Some(id) => id.clone(),
+        None => return Json(InitContractResponse { success: false, tx_hash: None, error: Some("CONTRACT_ID not configured".into()) }),
+    };
+    let seed_bytes = hex::decode(&req.seed).expect("invalid seed hex");
+    let mut seed = [0u8; 32];
+    seed.copy_from_slice(&seed_bytes);
+    let merchant = {
+        let mut merchants = state.merchants.lock().unwrap();
+        get_or_create_merchant(&mut merchants, &seed)
+    };
+    let vk_hex = format!(
+        r#"{{"alpha":{},"beta":{},"gamma":{},"delta":{},"gamma_abc":[{},{}]}}"#,
+        g1_to_hex(&merchant.vk.alpha_g1),
+        g2_to_hex(&merchant.vk.beta_g2),
+        g2_to_hex(&merchant.vk.gamma_g2),
+        g2_to_hex(&merchant.vk.delta_g2),
+        g1_to_hex(&merchant.vk.gamma_abc_g1[0]),
+        g1_to_hex(&merchant.vk.gamma_abc_g1[1]),
+    );
+    let output = Command::new("soroban")
+        .args(["contract", "invoke", "--id", &contract_id, "--source", "alice", "--network", "testnet", "--",
+            "initialize",
+            "--vk", &vk_hex])
+        .output();
+    match output {
+        Ok(out) => {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            if out.status.success() {
+                let tx_hash = stderr.lines()
+                    .find(|l| l.contains("stellar.expert"))
+                    .map(|l| l.trim().to_string());
+                Json(InitContractResponse { success: true, tx_hash, error: None })
+            } else {
+                Json(InitContractResponse { success: false, tx_hash: None, error: Some(stderr.trim().to_string()) })
+            }
+        }
+        Err(e) => Json(InitContractResponse { success: false, tx_hash: None, error: Some(format!("soroban CLI error: {e}")) }),
+    }
+}
+
 // ── Dashboard / Compliance Handlers ──
 
 async fn get_dashboard_stats() -> Json<DashboardStatsJson> {
@@ -487,6 +544,7 @@ async fn main() {
         .route("/api/compliance/report", post(generate_compliance_report))
         .route("/api/compliance/viewing-key", post(generate_viewing_key))
         .route("/api/merchant/create", post(create_merchant))
+        .route("/api/merchant/init-contract", post(init_contract))
         .route("/api/payment/generate-proof", post(generate_proof))
         .route("/api/payment/verify", post(verify_proof))
         .route("/api/payment/submit-to-contract", post(submit_to_contract))

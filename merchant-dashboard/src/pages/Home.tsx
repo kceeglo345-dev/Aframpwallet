@@ -122,10 +122,10 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                to="/dashboard"
+                to="/onboard"
                 className="inline-flex items-center px-6 py-3 rounded-xl bg-navy-900 text-white font-medium hover:bg-navy-800 transition-colors shadow-lg shadow-navy-900/20"
               >
-                Launch Console
+                Get Started Free
                 <svg className="ml-2 w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
@@ -275,7 +275,7 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
-                to="/dashboard"
+                to="/onboard"
                 className="inline-flex items-center px-6 py-3 rounded-xl bg-navy-900 text-white font-medium hover:bg-navy-800 transition-colors shadow-lg shadow-navy-900/20"
               >
                 Get Started Free
