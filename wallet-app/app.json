@@ -1,0 +1,38 @@
+{
+  "expo": {
+    "name": "Aframp Wallet",
+    "slug": "aframp-wallet",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "aframp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#0F172A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.aframp.wallet",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera is used to scan merchant QR codes to initiate private payments."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      },
+      "package": "com.aframp.wallet",
+      "permissions": ["android.permission.CAMERA"]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Aframp Wallet to access your camera to scan merchant QR codes."
+        }
+      ],
+      "expo-router"
+    ]
+  }
+}

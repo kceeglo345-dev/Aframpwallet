@@ -17,21 +17,43 @@ import { formatDate } from '../utils/format';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
+interface DashboardStats {
+  total_volume: number;
+  total_volume_usd: string;
+  transaction_count: number;
+  average_transaction: string;
+  balance: string;
+  daily_volume: { date: string; volume: number; count: number }[];
+  recent_payments: {
+    tx_hash: string;
+    amount: number;
+    amount_usd: string;
+    customer_id: string;
+    timestamp: number;
+    datetime: string;
+    status: string;
+  }[];
+}
+
 export default function Dashboard() {
   const { data: stats, isLoading, error } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: MerchantAPI.getDashboardStats,
-    refetchInterval: 30000,
+    queryFn: MerchantAPI.getDashboardStats as () => Promise<DashboardStats>,
+    refetchInterval: 15000,
   });
 
   if (!stats) return null;
 
   const chartData = {
-    labels: stats.daily_volume.map((d) => d.date),
+    labels: stats.daily_volume.length > 0
+      ? stats.daily_volume.map((d) => d.date)
+      : ['No data'],
     datasets: [
       {
         label: 'Daily Volume (USD)',
-        data: stats.daily_volume.map((d) => d.volume / 100),
+        data: stats.daily_volume.length > 0
+          ? stats.daily_volume.map((d) => d.volume / 100)
+          : [0],
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
         borderColor: 'rgba(59, 130, 246, 1)',
         borderWidth: 1,
@@ -57,6 +79,18 @@ export default function Dashboard() {
       },
     },
   };
+
+  const privateBalanceNote = (
+    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 flex items-start space-x-3">
+      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+      </svg>
+      <div>
+        <p className="font-medium">Private Balance</p>
+        <p className="text-amber-700 text-xs mt-1">Your balance is computed from decrypted payment notes. On-chain balance shows <strong>$0.00</strong> — only you can see the real amount.</p>
+      </div>
+    </div>
+  );
 
   return (
     <PageTemplate

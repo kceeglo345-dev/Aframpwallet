@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Features from './pages/Features';
 import Developers from './pages/Developers';
 import About from './pages/About';
+import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Compliance from './pages/Compliance';
@@ -30,7 +31,6 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
-          {/* Public site routes */}
           <Route
             path="/"
             element={
@@ -87,8 +87,19 @@ function App() {
               </div>
             }
           />
+          <Route
+            path="/onboard"
+            element={
+              <div className="min-h-screen bg-white">
+                <Navbar />
+                <main>
+                  <Onboarding />
+                </main>
+                <Footer />
+              </div>
+            }
+          />
 
-          {/* App routes (dashboard, transactions, etc.) */}
           <Route path="/dashboard" element={<AppLayout />}>
             <Route index element={<Dashboard />} />
           </Route>

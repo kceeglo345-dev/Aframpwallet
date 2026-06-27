@@ -1,5 +1,6 @@
 use dialoguer::{Confirm, Input, Select};
 use serde::Deserialize;
+use std::cmp::min;
 use std::env;
 
 const DEFAULT_API: &str = "http://localhost:3000";
@@ -12,22 +13,13 @@ struct CreateResponse {
 
 #[derive(Deserialize)]
 struct GenerateResponse {
-    proof: ProofJson,
-    merchant_id: String,
-    nullifier: String,
-    commitment: String,
-}
-
-#[derive(Deserialize)]
-struct ProofJson {
+    success: bool,
     a: String,
     b: String,
     c: String,
-}
-
-#[derive(Deserialize)]
-struct VerifyResponse {
-    valid: bool,
+    nullifier: String,
+    commitment: String,
+    error: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -44,10 +36,8 @@ fn api_url() -> String {
 fn menu_items() -> Vec<&'static str> {
     vec![
         "Create New Merchant",
-        "Generate Payment Proof",
-        "Verify Proof",
-        "Submit Proof to Contract",
-        "Exit",
+        "Generate + Submit Payment",
+        "Submit to Contract",
     ]
 }
 
@@ -92,40 +82,46 @@ fn generate_proof(seed: &str) {
         }
     };
 
-    let customer_id: String = Input::new()
-        .with_prompt("Customer ID (64 hex chars)")
-        .default("00000000000000000000000000000000000000000000000000000000deadbeef".into())
-        .interact_text()
-        .unwrap();
-
     println!("\nGenerating proof...");
 
-    let url = format!("{}/payment/generate-proof", api_url());
+    // Fetch merchant's PK first
+    let pk_url = format!("{}/api/merchant/{}/pk", api_url(), seed);
+    let pk_resp = ureq::get(&pk_url).call().unwrap().into_body().read_json::<serde_json::Value>().unwrap();
+    let pk_hex = pk_resp["pk_hex"].as_str().unwrap_or("").to_string();
+    let merchant_id = pk_resp["merchant_id"].as_str().unwrap_or("").to_string();
+
+    // Generate proof using the wallet endpoint
+    let rng_secret: String = (0..64).map(|_| { const CHARS: &[u8] = b"0123456789abcdef"; CHARS[rand::random::<usize>() % 16] as char }).collect();
+    let url = format!("{}/api/wallet/generate-proof", api_url());
     let req = serde_json::json!({
-        "seed": seed,
+        "pk_hex": pk_hex,
+        "customer_secret": rng_secret,
         "amount": amount,
-        "customer_id": customer_id,
+        "merchant_id": merchant_id,
     });
 
     match ureq::post(&url).send_json(&req) {
         Ok(resp) => {
             match resp.into_body().read_json::<GenerateResponse>() {
                 Ok(r) => {
+                    if !r.success {
+                        eprintln!("❌ Proof generation failed: {}", r.error.unwrap_or_default());
+                        return;
+                    }
                     println!("\n✅ Proof generated!");
-                    println!("   Merchant ID: {}", r.merchant_id);
                     println!("   Nullifier:   {}", r.nullifier);
                     println!("   Commitment:  {}", r.commitment);
-                    println!("\n   Proof.A: {}", &r.proof.a[..32]);
-                    println!("   Proof.B: {}...", &r.proof.b[..32]);
-                    println!("   Proof.C: {}", &r.proof.c[..32]);
+                    println!("\n   Proof.A: {}", &r.a[..min(32, r.a.len())]);
+                    println!("   Proof.B: {}...", &r.b[..min(32, r.b.len())]);
+                    println!("   Proof.C: {}", &r.c[..min(32, r.c.len())]);
 
                     if Confirm::new()
-                        .with_prompt("Verify this proof?")
+                        .with_prompt("Submit this proof to contract?")
                         .default(true)
                         .interact()
                         .unwrap()
                     {
-                        verify_proof_inner(seed, &r.proof.a, &r.proof.b, &r.proof.c, &r.nullifier, &r.commitment);
+                        submit_proof_to_contract(seed, &r.a, &r.b, &r.c, &r.nullifier, &r.commitment);
                     }
                 }
                 Err(e) => eprintln!("❌ Failed to parse response: {e}"),
@@ -135,8 +131,21 @@ fn generate_proof(seed: &str) {
     }
 }
 
-fn verify_proof_inner(seed: &str, a: &str, b: &str, c: &str, nullifier: &str, commitment: &str) {
-    let url = format!("{}/payment/verify", api_url());
+fn submit_proof_to_contract(seed: &str, a: &str, b: &str, c: &str, nullifier: &str, commitment: &str) {
+    let amount_str: String = Input::new()
+        .with_prompt("Payment amount (in cents)")
+        .default("100".into())
+        .interact_text()
+        .unwrap();
+    let amount: u64 = amount_str.parse().unwrap_or(100);
+    let customer_id: String = Input::new()
+        .with_prompt("Customer ID (64 hex chars)")
+        .default("00000000000000000000000000000000000000000000000000000000deadbeef".into())
+        .interact_text()
+        .unwrap();
+
+    println!("\nSubmitting to contract...");
+    let url = format!("{}/api/payment/submit-to-contract", api_url());
     let req = serde_json::json!({
         "seed": seed,
         "a": a,
@@ -144,16 +153,19 @@ fn verify_proof_inner(seed: &str, a: &str, b: &str, c: &str, nullifier: &str, co
         "c": c,
         "nullifier": nullifier,
         "commitment": commitment,
+        "amount": amount,
+        "customer_id": customer_id,
     });
 
     match ureq::post(&url).send_json(&req) {
         Ok(resp) => {
-            match resp.into_body().read_json::<VerifyResponse>() {
+            match resp.into_body().read_json::<SubmitResponse>() {
                 Ok(r) => {
-                    if r.valid {
-                        println!("\n✅ Proof is VALID");
+                    if r.success {
+                        println!("\n✅ Submitted to contract!");
+                        if let Some(tx) = r.tx_hash { println!("   TX: {tx}"); }
                     } else {
-                        println!("\n❌ Proof is INVALID");
+                        println!("\n❌ Submission failed: {}", r.error.unwrap_or_default());
                     }
                 }
                 Err(e) => eprintln!("❌ Failed to parse response: {e}"),
@@ -163,40 +175,8 @@ fn verify_proof_inner(seed: &str, a: &str, b: &str, c: &str, nullifier: &str, co
     }
 }
 
-fn verify_proof_menu() {
-    println!("\n--- Verify Proof ---");
-
-    let seed: String = Input::new()
-        .with_prompt("Merchant seed")
-        .interact_text()
-        .unwrap();
-
-    let a: String = Input::new()
-        .with_prompt("Proof.A (128 hex chars)")
-        .interact_text()
-        .unwrap();
-    let b: String = Input::new()
-        .with_prompt("Proof.B (256 hex chars)")
-        .interact_text()
-        .unwrap();
-    let c: String = Input::new()
-        .with_prompt("Proof.C (128 hex chars)")
-        .interact_text()
-        .unwrap();
-    let nullifier: String = Input::new()
-        .with_prompt("Nullifier (64 hex chars)")
-        .interact_text()
-        .unwrap();
-    let commitment: String = Input::new()
-        .with_prompt("Commitment (64 hex chars)")
-        .interact_text()
-        .unwrap();
-
-    verify_proof_inner(&seed, &a, &b, &c, &nullifier, &commitment);
-}
-
 fn submit_to_contract(seed: &str) {
-    println!("\n--- Submit Proof to Contract ---");
+    println!("\n--- Submit Payment to Contract ---");
 
     let amount: u64 = loop {
         let input: String = Input::new()
@@ -216,11 +196,39 @@ fn submit_to_contract(seed: &str) {
         .interact_text()
         .unwrap();
 
-    println!("\nSubmitting proof to contract...");
+    // Step 1: Fetch merchant's PK
+    println!("\nFetching merchant key...");
+    let pk_url = format!("{}/api/merchant/{}/pk", api_url(), seed);
+    let pk_resp = ureq::get(&pk_url).call().unwrap().into_body().read_json::<serde_json::Value>().unwrap();
+    let pk_hex = pk_resp["pk_hex"].as_str().unwrap_or("").to_string();
+    let merchant_id = pk_resp["merchant_id"].as_str().unwrap_or("").to_string();
 
-    let url = format!("{}/payment/submit-to-contract", api_url());
+    // Step 2: Generate proof
+    println!("Generating proof...");
+    let rng_secret: String = (0..64).map(|_| { const CHARS: &[u8] = b"0123456789abcdef"; CHARS[rand::random::<usize>() % 16] as char }).collect();
+    let gen_url = format!("{}/api/wallet/generate-proof", api_url());
+    let gen_req = serde_json::json!({
+        "pk_hex": pk_hex,
+        "customer_secret": rng_secret,
+        "amount": amount,
+        "merchant_id": merchant_id,
+    });
+    let gen_resp = ureq::post(&gen_url).send_json(&gen_req).unwrap().into_body().read_json::<GenerateResponse>().unwrap();
+    if !gen_resp.success {
+        eprintln!("❌ Proof generation failed: {}", gen_resp.error.unwrap_or_default());
+        return;
+    }
+
+    // Step 3: Submit to contract
+    println!("Submitting proof to contract...");
+    let url = format!("{}/api/payment/submit-to-contract", api_url());
     let req = serde_json::json!({
         "seed": seed,
+        "a": gen_resp.a,
+        "b": gen_resp.b,
+        "c": gen_resp.c,
+        "nullifier": gen_resp.nullifier,
+        "commitment": gen_resp.commitment,
         "amount": amount,
         "customer_id": customer_id,
     });
@@ -282,8 +290,7 @@ fn main() {
                 };
                 generate_proof(&s);
             }
-            2 => verify_proof_menu(),
-            3 => {
+            2 => {
                 let s = match seed.as_ref() {
                     Some(s) => s.clone(),
                     None => {
@@ -297,7 +304,7 @@ fn main() {
                 };
                 submit_to_contract(&s);
             }
-            4 => {
+            3 => {
                 println!("\n👋 Goodbye!");
                 break;
             }

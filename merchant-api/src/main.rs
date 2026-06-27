@@ -3,8 +3,12 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 use std::sync::Mutex;
+use aes_gcm::{
+    Aes256Gcm, Key, Nonce,
+    aead::{Aead, KeyInit},
+};
 use ark_ff::{BigInteger, PrimeField};
-use ark_serialize::CanonicalSerialize;
+use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
 use axum::{
     Router,
     extract::{Path as AxumPath, State},
@@ -32,48 +36,17 @@ struct AppState {
 struct CreateMerchantResponse {
     merchant_id: String,
     seed: String,
-}
-
-#[derive(Deserialize)]
-struct GenerateProofRequest {
-    seed: String,
-    amount: u64,
-    customer_id: String,
-}
-
-#[derive(Serialize)]
-struct ProofJson {
-    a: String,
-    b: String,
-    c: String,
-}
-
-#[derive(Serialize)]
-struct GenerateProofResponse {
-    proof: ProofJson,
-    merchant_id: String,
-    nullifier: String,
-    commitment: String,
-}
-
-#[derive(Deserialize)]
-struct VerifyProofRequest {
-    seed: String,
-    a: String,
-    b: String,
-    c: String,
-    nullifier: String,
-    commitment: String,
-}
-
-#[derive(Serialize)]
-struct VerifyProofResponse {
-    valid: bool,
+    viewing_key: String,
 }
 
 #[derive(Deserialize)]
 struct SubmitToContractRequest {
     seed: String,
+    a: String,
+    b: String,
+    c: String,
+    nullifier: String,
+    commitment: String,
     amount: u64,
     customer_id: String,
 }
@@ -85,7 +58,17 @@ struct SubmitToContractResponse {
     error: Option<String>,
 }
 
-// ── Dashboard / Compliance types ──
+#[derive(Deserialize)]
+struct InitContractRequest {
+    seed: String,
+}
+
+#[derive(Serialize)]
+struct InitContractResponse {
+    success: bool,
+    tx_hash: Option<String>,
+    error: Option<String>,
+}
 
 #[derive(Serialize)]
 struct PaymentRecordJson {
@@ -111,6 +94,7 @@ struct DashboardStatsJson {
     total_volume_usd: String,
     transaction_count: u64,
     average_transaction: String,
+    balance: String,
     daily_volume: Vec<DailyVolumeJson>,
     recent_payments: Vec<PaymentRecordJson>,
 }
@@ -138,12 +122,70 @@ struct MerchantInfoJson {
     balance: String,
 }
 
+#[derive(Deserialize)]
+struct WalletGenerateProofRequest {
+    pk_hex: String,
+    customer_secret: String,
+    amount: u64,
+    merchant_id: String,
+}
+
+#[derive(Serialize)]
+struct WalletGenerateProofResponse {
+    success: bool,
+    a: String,
+    b: String,
+    c: String,
+    nullifier: String,
+    commitment: String,
+    error: Option<String>,
+}
+
 #[derive(Serialize)]
 struct ViewingKeyResponse {
     key: String,
 }
 
+#[derive(Serialize)]
+struct DecryptedPaymentJson {
+    amount: u64,
+    amount_usd: String,
+    customer_id: String,
+    timestamp: u64,
+    datetime: String,
+}
+
+#[derive(Serialize)]
+struct MerchantPaymentsResponse {
+    payments: Vec<DecryptedPaymentJson>,
+    balance: String,
+}
+
+#[derive(Serialize)]
+struct MerchantQrInfo {
+    api_url: String,
+    merchant_id: String,
+    contract_id: String,
+    pk_url: String,
+    seed_hex: String,
+}
+
+#[derive(Serialize)]
+struct MerchantPkResponse {
+    pk_hex: String,
+    merchant_id: String,
+}
+
+#[derive(Serialize)]
+struct MerchantBalanceResponse {
+    balance: String,
+    note_count: usize,
+    visible_on_chain: String,
+}
+
 const MERCHANT_DIR: &str = "merchant_data";
+
+// ── Helpers ──
 
 fn fr_to_hex(fr: &ark_bn254::Fr) -> String {
     hex::encode(fr.into_bigint().to_bytes_be())
@@ -165,42 +207,69 @@ fn g2_to_hex(point: &ark_bn254::G2Affine) -> String {
     hex::encode(out)
 }
 
-fn hex_to_g1(hex_str: &str) -> Result<ark_bn254::G1Affine, String> {
-    let bytes = hex::decode(hex_str).map_err(|e| format!("invalid hex: {e}"))?;
-    if bytes.len() != 64 {
-        return Err("expected 64 bytes for G1".into());
-    }
-    let x = ark_bn254::Fq::from_be_bytes_mod_order(&bytes[..32]);
-    let y = ark_bn254::Fq::from_be_bytes_mod_order(&bytes[32..]);
-    Ok(ark_bn254::G1Affine::new(x, y))
-}
-
-fn hex_to_g2(hex_str: &str) -> Result<ark_bn254::G2Affine, String> {
-    let bytes = hex::decode(hex_str).map_err(|e| format!("invalid hex: {e}"))?;
-    if bytes.len() != 128 {
-        return Err("expected 128 bytes for G2".into());
-    }
-    let x_c1 = ark_bn254::Fq::from_be_bytes_mod_order(&bytes[..32]);
-    let x_c0 = ark_bn254::Fq::from_be_bytes_mod_order(&bytes[32..64]);
-    let y_c1 = ark_bn254::Fq::from_be_bytes_mod_order(&bytes[64..96]);
-    let y_c0 = ark_bn254::Fq::from_be_bytes_mod_order(&bytes[96..]);
-    Ok(ark_bn254::G2Affine::new(
-        ark_bn254::Fq2::new(x_c0, x_c1),
-        ark_bn254::Fq2::new(y_c0, y_c1),
-    ))
-}
-
-fn hex_to_fr(hex_str: &str) -> Result<ark_bn254::Fr, String> {
-    let bytes = hex::decode(hex_str).map_err(|e| format!("invalid hex: {e}"))?;
-    if bytes.len() != 32 {
-        return Err("expected 32 bytes".into());
-    }
-    Ok(ark_bn254::Fr::from_be_bytes_mod_order(&bytes))
-}
-
 fn merchant_dir(seed: &[u8; 32]) -> String {
     format!("{}/{}", MERCHANT_DIR, hex::encode(seed))
 }
+
+// ── Viewing Key Encryption / Decryption ──
+
+fn encrypt_payment_data(viewing_key: &[u8; 32], amount: u64, customer_id: &str, timestamp: u64) -> String {
+    let plaintext = format!("{}|{}|{}", amount, customer_id, timestamp);
+    let key = Key::<Aes256Gcm>::from_slice(viewing_key);
+    let cipher = Aes256Gcm::new(key);
+    let nonce_bytes: [u8; 12] = rand::random();
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    let ciphertext = cipher.encrypt(nonce, plaintext.as_bytes()).unwrap();
+    let mut combined = Vec::with_capacity(12 + ciphertext.len());
+    combined.extend_from_slice(&nonce_bytes);
+    combined.extend_from_slice(&ciphertext);
+    hex::encode(combined)
+}
+
+fn decrypt_payment_data(viewing_key: &[u8; 32], encrypted_hex: &str) -> Result<(u64, String, u64), String> {
+    let combined = hex::decode(encrypted_hex).map_err(|e| format!("invalid hex: {e}"))?;
+    if combined.len() < 13 {
+        return Err("data too short".into());
+    }
+    let nonce = Nonce::from_slice(&combined[..12]);
+    let ciphertext = &combined[12..];
+    let key = Key::<Aes256Gcm>::from_slice(viewing_key);
+    let cipher = Aes256Gcm::new(key);
+    let plaintext = cipher.decrypt(nonce, ciphertext).map_err(|_| "decryption failed (wrong viewing key?)")?;
+    let plaintext_str = String::from_utf8(plaintext).map_err(|_| "invalid utf-8")?;
+    let parts: Vec<&str> = plaintext_str.split('|').collect();
+    if parts.len() != 3 {
+        return Err("invalid payment data format".into());
+    }
+    let amount: u64 = parts[0].parse().map_err(|_| "invalid amount")?;
+    let customer_id = parts[1].to_string();
+    let timestamp: u64 = parts[2].parse().map_err(|_| "invalid timestamp")?;
+    Ok((amount, customer_id, timestamp))
+}
+
+fn viewing_key_path(seed: &[u8; 32]) -> String {
+    format!("{}/viewing_key", merchant_dir(seed))
+}
+
+fn save_viewing_key(seed: &[u8; 32], viewing_key: &[u8; 32]) {
+    let path = viewing_key_path(seed);
+    if let Some(parent) = Path::new(&path).parent() {
+        fs::create_dir_all(parent).ok();
+    }
+    fs::write(&path, viewing_key).ok();
+}
+
+fn load_viewing_key(seed: &[u8; 32]) -> Option<[u8; 32]> {
+    let path = viewing_key_path(seed);
+    fs::read(&path).ok().map(|bytes| {
+        let mut key = [0u8; 32];
+        let len = bytes.len().min(32);
+        key[..len].copy_from_slice(&bytes[..len]);
+        key
+    })
+}
+
+// ── Merchant Persistence ──
 
 fn save_merchant(merchant: &MerchantPaymentSystem, seed: &[u8; 32]) {
     let dir = merchant_dir(seed);
@@ -211,43 +280,23 @@ fn save_merchant(merchant: &MerchantPaymentSystem, seed: &[u8; 32]) {
     let mut vk_bytes = Vec::new();
     merchant.vk.serialize_compressed(&mut vk_bytes).unwrap();
     fs::write(Path::new(&dir).join("vk"), vk_bytes).ok();
+    fs::write(Path::new(&dir).join("merchant_id"), hex::encode(seed)).ok();
 }
 
 fn load_merchant(seed: &[u8; 32]) -> Option<MerchantPaymentSystem> {
     use ark_serialize::CanonicalDeserialize;
-    let seed_hex = hex::encode(seed);
     let dir = merchant_dir(seed);
     let pk_path = Path::new(&dir).join("pk");
     let vk_path = Path::new(&dir).join("vk");
-    let (pk_bytes, vk_bytes) = if pk_path.exists() && vk_path.exists() {
-        (fs::read(pk_path).ok()?, fs::read(vk_path).ok()?)
-    } else {
-        let legacy_seed_path = Path::new(".merchant").join("seed");
-        if let Ok(legacy_seed_hex) = fs::read_to_string(&legacy_seed_path) {
-            if legacy_seed_hex.trim() == seed_hex {
-                let pk = fs::read(Path::new(".merchant").join("pk")).ok()?;
-                let vk = fs::read(Path::new(".merchant").join("vk")).ok()?;
-                fs::create_dir_all(&dir).ok();
-                fs::write(Path::new(&dir).join("pk"), &pk).ok();
-                fs::write(Path::new(&dir).join("vk"), &vk).ok();
-                (pk, vk)
-            } else {
-                return None;
-            }
-        } else {
-            return None;
-        }
-    };
+    let pk_bytes = fs::read(pk_path).ok()?;
+    let vk_bytes = fs::read(vk_path).ok()?;
     let pk = ark_groth16::ProvingKey::<ark_bn254::Bn254>::deserialize_compressed(
         &mut &pk_bytes[..],
-    )
-    .ok()?;
+    ).ok()?;
     let vk = ark_groth16::VerifyingKey::<ark_bn254::Bn254>::deserialize_compressed(
         &mut &vk_bytes[..],
-    )
-    .ok()?;
-    let secret_fr = ark_bn254::Fr::from_le_bytes_mod_order(seed);
-    let merchant_id = secret_fr * ark_bn254::Fr::from(2u64);
+    ).ok()?;
+    let merchant_id = ark_bn254::Fr::from_le_bytes_mod_order(seed);
     Some(MerchantPaymentSystem { merchant_id, pk, vk })
 }
 
@@ -276,6 +325,61 @@ fn parse_hex_seed(hex_str: &str) -> [u8; 32] {
     seed
 }
 
+fn current_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_secs()
+}
+
+fn datetime_from_timestamp(ts: u64) -> String {
+    let secs = ts as i64;
+    let naive = chrono::DateTime::from_timestamp(secs, 0).unwrap();
+    naive.format("%Y-%m-%dT%H:%M:%SZ").to_string()
+}
+
+// ── Dashboard state ──
+
+struct MerchantDashboardState {
+    total_volume: u64,
+    transaction_count: u64,
+    payments: Vec<DecryptedPaymentJson>,
+}
+
+fn update_dashboard_state(seed: &[u8; 32]) -> MerchantDashboardState {
+    if let Some(vk) = load_viewing_key(seed) {
+        let dir = merchant_dir(seed);
+        let notes_dir = Path::new(&dir).join("payment_notes");
+        let mut total_volume = 0u64;
+        let mut transaction_count = 0u64;
+        let mut payments = Vec::new();
+        if notes_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&notes_dir) {
+                for entry in entries.flatten() {
+                    if let Ok(data) = fs::read(entry.path()) {
+                        let hex_str = String::from_utf8_lossy(&data);
+                        if let Ok((amount, customer_id, timestamp)) = decrypt_payment_data(&vk, &hex_str) {
+                            total_volume += amount;
+                            transaction_count += 1;
+                            payments.push(DecryptedPaymentJson {
+                                amount,
+                                amount_usd: format!("${:.2}", amount as f64 / 100.0),
+                                customer_id,
+                                timestamp,
+                                datetime: datetime_from_timestamp(timestamp),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        payments.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        MerchantDashboardState { total_volume, transaction_count, payments }
+    } else {
+        MerchantDashboardState { total_volume: 0, transaction_count: 0, payments: vec![] }
+    }
+}
+
 // ── API Handlers ──
 
 async fn create_merchant(State(state): State<AppState>) -> Json<CreateMerchantResponse> {
@@ -291,53 +395,18 @@ async fn create_merchant(State(state): State<AppState>) -> Json<CreateMerchantRe
         let mut merchants = state.merchants.lock().unwrap();
         get_or_create_merchant(&mut merchants, &seed)
     };
-    Json(CreateMerchantResponse { merchant_id: fr_to_hex(&merchant.merchant_id), seed: hex::encode(seed) })
-}
-
-async fn generate_proof(
-    State(state): State<AppState>,
-    Json(req): Json<GenerateProofRequest>,
-) -> Json<GenerateProofResponse> {
-    let seed_bytes = hex::decode(&req.seed).expect("invalid seed hex");
-    let mut seed = [0u8; 32];
-    seed.copy_from_slice(&seed_bytes);
-    let merchant = {
-        let mut merchants = state.merchants.lock().unwrap();
-        get_or_create_merchant(&mut merchants, &seed)
-    };
-    let mut customer = [0u8; 32];
-    let customer_bytes = hex::decode(&req.customer_id).expect("invalid customer_id hex");
-    customer.copy_from_slice(&customer_bytes);
-    let (proof, nullifier, commitment) = merchant.generate_proof(&seed, req.amount, &customer).unwrap();
-    Json(GenerateProofResponse {
-        proof: ProofJson { a: g1_to_hex(&proof.a), b: g2_to_hex(&proof.b), c: g1_to_hex(&proof.c) },
+    let mut viewing_key = [0u8; 32];
+    rand::thread_rng().fill_bytes(&mut viewing_key);
+    save_viewing_key(&seed, &viewing_key);
+    Json(CreateMerchantResponse {
         merchant_id: fr_to_hex(&merchant.merchant_id),
-        nullifier: fr_to_hex(&nullifier),
-        commitment: fr_to_hex(&commitment),
+        seed: hex::encode(seed),
+        viewing_key: hex::encode(viewing_key),
     })
 }
 
-async fn verify_proof(
-    State(state): State<AppState>,
-    Json(req): Json<VerifyProofRequest>,
-) -> Json<VerifyProofResponse> {
-    let seed_bytes = hex::decode(&req.seed).expect("invalid seed hex");
-    let mut seed = [0u8; 32];
-    seed.copy_from_slice(&seed_bytes);
-    let merchant = {
-        let mut merchants = state.merchants.lock().unwrap();
-        get_or_create_merchant(&mut merchants, &seed)
-    };
-    let nullifier = hex_to_fr(&req.nullifier).unwrap();
-    let commitment = hex_to_fr(&req.commitment).unwrap();
-    let a = hex_to_g1(&req.a).unwrap();
-    let b = hex_to_g2(&req.b).unwrap();
-    let c = hex_to_g1(&req.c).unwrap();
-    let proof = ark_groth16::Proof::<ark_bn254::Bn254> { a, b, c };
-    let valid = merchant.verify_proof(&proof, &merchant.merchant_id, &nullifier, &commitment).unwrap_or(false);
-    Json(VerifyProofResponse { valid })
-}
-
+/// Submit a customer-generated proof to the contract.
+/// The proof was built on-device by the customer using the merchant's PK.
 async fn submit_to_contract(
     State(state): State<AppState>,
     Json(req): Json<SubmitToContractRequest>,
@@ -346,35 +415,43 @@ async fn submit_to_contract(
         Some(id) => id.clone(),
         None => return Json(SubmitToContractResponse { success: false, tx_hash: None, error: Some("CONTRACT_ID not configured".into()) }),
     };
-    let seed_bytes = hex::decode(&req.seed).expect("invalid seed hex");
-    let mut seed = [0u8; 32];
-    seed.copy_from_slice(&seed_bytes);
+    let seed = parse_hex_seed(&req.seed);
+
+    // Encrypt payment data with viewing key for dashboard
+    let viewing_key = load_viewing_key(&seed);
+    if let Some(vk) = viewing_key {
+        let customer_hex = hex::encode(req.customer_id.as_bytes());
+        let encrypted = encrypt_payment_data(&vk, req.amount, &customer_hex, current_timestamp());
+        let notes_dir = Path::new(&merchant_dir(&seed)).join("payment_notes");
+        fs::create_dir_all(&notes_dir).ok();
+        let note_path = notes_dir.join(format!("{}.enc", req.nullifier));
+        fs::write(&note_path, &encrypted).ok();
+    }
+
+    let proof_str = serde_json::json!({ "a": req.a, "b": req.b, "c": req.c }).to_string();
     let merchant = {
         let mut merchants = state.merchants.lock().unwrap();
         get_or_create_merchant(&mut merchants, &seed)
     };
-    let mut customer = [0u8; 32];
-    let customer_bytes = hex::decode(&req.customer_id).expect("invalid customer_id hex");
-    customer.copy_from_slice(&customer_bytes);
-    let (proof, nullifier, commitment) = merchant.generate_proof(&seed, req.amount, &customer).unwrap();
-    let merchant_id_hex = fr_to_hex(&merchant.merchant_id);
-    let nullifier_hex = fr_to_hex(&nullifier);
-    let commitment_hex = fr_to_hex(&commitment);
-    let a_hex = g1_to_hex(&proof.a);
-    let b_hex = g2_to_hex(&proof.b);
-    let c_hex = g1_to_hex(&proof.c);
-    let proof_json = serde_json::json!({ "a": a_hex, "b": b_hex, "c": c_hex });
-    let merchant_id_int = num_bigint::BigUint::from_bytes_be(&hex::decode(&merchant_id_hex).unwrap());
-    let nullifier_int = num_bigint::BigUint::from_bytes_be(&hex::decode(&nullifier_hex).unwrap());
-    let commitment_int = num_bigint::BigUint::from_bytes_be(&hex::decode(&commitment_hex).unwrap());
+    let _nullifier_int = num_bigint::BigUint::from_bytes_be(&hex::decode(&req.nullifier).unwrap_or_default());
+    let _commitment_int = num_bigint::BigUint::from_bytes_be(&hex::decode(&req.commitment).unwrap_or_default());
+
+    let proof_file = match tempfile::Builder::new().prefix("proof_").suffix(".json").tempfile() {
+        Ok(f) => f,
+        Err(e) => return Json(SubmitToContractResponse { success: false, tx_hash: None, error: Some(format!("failed to create temp file: {e}")) }),
+    };
+    let proof_path = proof_file.path().to_str().unwrap().to_string();
+    std::fs::write(proof_file.path(), &proof_str).ok();
+
     let output = Command::new("soroban")
         .args(["contract", "invoke", "--id", &contract_id, "--source", "alice", "--network", "testnet", "--",
             "process_payment",
-            "--merchant_id", &merchant_id_int.to_str_radix(10),
-            "--nullifier", &nullifier_int.to_str_radix(10),
-            "--commitment", &commitment_int.to_str_radix(10),
-            "--proof", &proof_json.to_string()])
+            "--merchant_id", &format!("0x{}", fr_to_hex(&merchant.merchant_id)),
+            "--nullifier", &format!("0x{}", req.nullifier),
+            "--commitment", &format!("0x{}", req.commitment),
+            "--proof-file-path", &proof_path])
         .output();
+    drop(proof_file);
     match output {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr);
@@ -391,31 +468,100 @@ async fn submit_to_contract(
     }
 }
 
+async fn init_contract(
+    State(state): State<AppState>,
+    Json(req): Json<InitContractRequest>,
+) -> Json<InitContractResponse> {
+    let contract_id = match &state.contract_id {
+        Some(id) => id.clone(),
+        None => return Json(InitContractResponse { success: false, tx_hash: None, error: Some("CONTRACT_ID not configured".into()) }),
+    };
+    let seed = parse_hex_seed(&req.seed);
+    let merchant = {
+        let mut merchants = state.merchants.lock().unwrap();
+        get_or_create_merchant(&mut merchants, &seed)
+    };
+    let vk_file = match tempfile::Builder::new().prefix("vk_").suffix(".json").tempfile() {
+        Ok(f) => f,
+        Err(e) => return Json(InitContractResponse { success: false, tx_hash: None, error: Some(format!("failed to create temp file: {e}")) }),
+    };
+    let vk_path = vk_file.path().to_str().unwrap().to_string();
+    let vk_json = serde_json::json!({
+        "alpha": g1_to_hex(&merchant.vk.alpha_g1),
+        "beta": g2_to_hex(&merchant.vk.beta_g2),
+        "gamma": g2_to_hex(&merchant.vk.gamma_g2),
+        "delta": g2_to_hex(&merchant.vk.delta_g2),
+        "ic": [
+            g1_to_hex(&merchant.vk.gamma_abc_g1[0]),
+            g1_to_hex(&merchant.vk.gamma_abc_g1[1]),
+        ],
+    });
+    std::fs::write(vk_file.path(), serde_json::to_string(&vk_json).unwrap()).ok();
+    let output = Command::new("soroban")
+        .args(["contract", "invoke", "--id", &contract_id, "--source", "alice", "--network", "testnet", "--",
+            "initialize",
+            "--vk-file-path", &vk_path])
+        .output();
+    drop(vk_file);
+    match output {
+        Ok(out) => {
+            let stderr = String::from_utf8_lossy(&out.stderr);
+            if out.status.success() {
+                let tx_hash = stderr.lines()
+                    .find(|l| l.contains("stellar.expert"))
+                    .map(|l| l.trim().to_string());
+                Json(InitContractResponse { success: true, tx_hash, error: None })
+            } else {
+                Json(InitContractResponse { success: false, tx_hash: None, error: Some(stderr.trim().to_string()) })
+            }
+        }
+        Err(e) => Json(InitContractResponse { success: false, tx_hash: None, error: Some(format!("soroban CLI error: {e}")) }),
+    }
+}
+
 // ── Dashboard / Compliance Handlers ──
 
-async fn get_dashboard_stats() -> Json<DashboardStatsJson> {
-    Json(DashboardStatsJson {
-        total_volume: 154_230_00,
-        total_volume_usd: "$154,230.00".into(),
-        transaction_count: 1_247,
-        average_transaction: "$123.68".into(),
-        daily_volume: vec![
-            DailyVolumeJson { date: "Jun 18".into(), volume: 8_200_00, count: 42 },
-            DailyVolumeJson { date: "Jun 19".into(), volume: 12_400_00, count: 58 },
-            DailyVolumeJson { date: "Jun 20".into(), volume: 9_100_00, count: 47 },
-            DailyVolumeJson { date: "Jun 21".into(), volume: 14_800_00, count: 63 },
-            DailyVolumeJson { date: "Jun 22".into(), volume: 11_300_00, count: 55 },
-            DailyVolumeJson { date: "Jun 23".into(), volume: 15_600_00, count: 71 },
-            DailyVolumeJson { date: "Jun 24".into(), volume: 10_500_00, count: 52 },
-        ],
-        recent_payments: vec![
-            PaymentRecordJson { tx_hash: "b22fc68201257be1983364139ff6043c5331b277758e78ba98f27a000bbadceb".into(), amount: 42_00, amount_usd: "$42.00".into(), customer_id: "0xdead...beef".into(), timestamp: 1719192000, datetime: "2026-06-24T02:40:00Z".into(), status: "completed".into() },
-            PaymentRecordJson { tx_hash: "f12bb6c6a23901663a538967aa2d310ef570ccf03e4f506b0cf8572d3488c355".into(), amount: 99_00, amount_usd: "$99.00".into(), customer_id: "0xaaaa...0001".into(), timestamp: 1719192300, datetime: "2026-06-24T02:45:00Z".into(), status: "completed".into() },
-            PaymentRecordJson { tx_hash: "48efe4d9fca9d30d21508526fa6ec1e2a96eb52ec9e082912599e9339549a16c".into(), amount: 42_00, amount_usd: "$42.00".into(), customer_id: "0xdead...beef".into(), timestamp: 1719189000, datetime: "2026-06-24T01:50:00Z".into(), status: "completed".into() },
-            PaymentRecordJson { tx_hash: "1124064db2cc0142eb492e44874f5e696a62abe549835f353156b56e318d4d69".into(), amount: 157_50, amount_usd: "$157.50".into(), customer_id: "0x1234...5678".into(), timestamp: 1719186000, datetime: "2026-06-24T01:20:00Z".into(), status: "completed".into() },
-            PaymentRecordJson { tx_hash: "cd5490348bdee973a9525148b097ce880d6db7969d68fdf9d81f048130ed2100".into(), amount: 100_00, amount_usd: "$100.00".into(), customer_id: "0xabcd...ef01".into(), timestamp: 1719183000, datetime: "2026-06-24T00:50:00Z".into(), status: "completed".into() },
-        ],
-    })
+async fn get_dashboard_stats(State(app): State<AppState>) -> Json<DashboardStatsJson> {
+    let seed = app.fixed_seed.as_ref().map(|s| parse_hex_seed(s));
+    let _merchants = app.merchants.lock().unwrap();
+
+    if let Some(seed) = seed {
+        let ds = update_dashboard_state(&seed);
+        let balance = format!("${:.2}", ds.total_volume as f64 / 100.0);
+        let avg = if ds.transaction_count > 0 {
+            format!("${:.2}", ds.total_volume as f64 / ds.transaction_count as f64 / 100.0)
+        } else {
+            "$0.00".into()
+        };
+        let recent: Vec<PaymentRecordJson> = ds.payments.iter().take(5).map(|p| PaymentRecordJson {
+            tx_hash: String::new(),
+            amount: p.amount,
+            amount_usd: p.amount_usd.clone(),
+            customer_id: p.customer_id.clone(),
+            timestamp: p.timestamp,
+            datetime: p.datetime.clone(),
+            status: "completed".into(),
+        }).collect();
+        Json(DashboardStatsJson {
+            total_volume: ds.total_volume,
+            total_volume_usd: balance.clone(),
+            transaction_count: ds.transaction_count as u64,
+            average_transaction: avg,
+            balance,
+            daily_volume: vec![],
+            recent_payments: recent,
+        })
+    } else {
+        Json(DashboardStatsJson {
+            total_volume: 0,
+            total_volume_usd: "$0.00".into(),
+            transaction_count: 0,
+            average_transaction: "$0.00".into(),
+            balance: "$0.00".into(),
+            daily_volume: vec![],
+            recent_payments: vec![],
+        })
+    }
 }
 
 async fn generate_compliance_report() -> Json<ComplianceReportJson> {
@@ -426,10 +572,7 @@ async fn generate_compliance_report() -> Json<ComplianceReportJson> {
         total_transactions: 1_247,
         total_volume_usd: "$154,230.00".into(),
         average_transaction_usd: "$123.68".into(),
-        payments: vec![
-            PaymentRecordJson { tx_hash: "b22fc68201257be1983364139ff6043c5331b277758e78ba98f27a000bbadceb".into(), amount: 42_00, amount_usd: "$42.00".into(), customer_id: "0xdead...beef".into(), timestamp: 1719192000, datetime: "2026-06-24T02:40:00Z".into(), status: "completed".into() },
-            PaymentRecordJson { tx_hash: "f12bb6c6a23901663a538967aa2d310ef570ccf03e4f506b0cf8572d3488c355".into(), amount: 99_00, amount_usd: "$99.00".into(), customer_id: "0xaaaa...0001".into(), timestamp: 1719192300, datetime: "2026-06-24T02:45:00Z".into(), status: "completed".into() },
-        ],
+        payments: vec![],
         generated_at: "2026-06-24T03:00:00Z".into(),
     })
 }
@@ -442,19 +585,133 @@ async fn get_merchant_info(AxumPath(merchant_id): AxumPath<String>) -> Json<Merc
         supported_assets: vec!["USDC".into(), "XLM".into()],
         fee: "0.1%".into(),
         network: "Stellar Testnet".into(),
-        balance: "$15,234.56".into(),
+        balance: "$0.00 (private)".into(),
+    })
+}
+
+async fn get_merchant_payments(
+    State(_state): State<AppState>,
+    AxumPath(seed_hex): AxumPath<String>,
+) -> Json<MerchantPaymentsResponse> {
+    let seed = parse_hex_seed(&seed_hex);
+    let ds = update_dashboard_state(&seed);
+    let balance = format!("${:.2}", ds.total_volume as f64 / 100.0);
+    Json(MerchantPaymentsResponse {
+        balance: balance.clone(),
+        payments: ds.payments,
+    })
+}
+
+async fn get_merchant_balance(
+    State(_state): State<AppState>,
+    AxumPath(seed_hex): AxumPath<String>,
+) -> Json<MerchantBalanceResponse> {
+    let seed = parse_hex_seed(&seed_hex);
+    let ds = update_dashboard_state(&seed);
+    Json(MerchantBalanceResponse {
+        balance: format!("${:.2}", ds.total_volume as f64 / 100.0),
+        note_count: ds.transaction_count as usize,
+        visible_on_chain: "$0.00".into(),
     })
 }
 
 async fn get_balance(AxumPath(_merchant_id): AxumPath<String>) -> impl IntoResponse {
-    (StatusCode::OK, "15234.56")
+    (StatusCode::OK, "0.00 (private)")
+}
+
+/// Generate a proof using the merchant's public key (pk).
+/// This is the DEMO path — production would use WASM on-device.
+async fn wallet_generate_proof(
+    Json(req): Json<WalletGenerateProofRequest>,
+) -> Json<WalletGenerateProofResponse> {
+    use privacy_circuits::customer_generate_proof;
+
+    let pk_bytes = match hex::decode(&req.pk_hex) {
+        Ok(b) => b,
+        Err(e) => return Json(WalletGenerateProofResponse {
+            success: false, a: String::new(), b: String::new(), c: String::new(),
+            nullifier: String::new(), commitment: String::new(),
+            error: Some(format!("invalid pk_hex: {e}")),
+        }),
+    };
+    let pk = match ark_groth16::ProvingKey::<ark_bn254::Bn254>::deserialize_compressed(&mut &pk_bytes[..]) {
+        Ok(p) => p,
+        Err(e) => return Json(WalletGenerateProofResponse {
+            success: false, a: String::new(), b: String::new(), c: String::new(),
+            nullifier: String::new(), commitment: String::new(),
+            error: Some(format!("invalid pk bytes: {e}")),
+        }),
+    };
+
+    let mut customer_secret = [0u8; 32];
+    let secret_bytes = hex::decode(&req.customer_secret).unwrap_or_default();
+    let len = secret_bytes.len().min(32);
+    customer_secret[..len].copy_from_slice(&secret_bytes[..len]);
+
+    let mut merchant_id = [0u8; 32];
+    let mid_bytes = hex::decode(&req.merchant_id).unwrap_or_default();
+    let len2 = mid_bytes.len().min(32);
+    merchant_id[..len2].copy_from_slice(&mid_bytes[..len2]);
+
+    match customer_generate_proof(&pk, &customer_secret, req.amount, &merchant_id) {
+        Ok((proof, nullifier, commitment)) => Json(WalletGenerateProofResponse {
+            success: true,
+            a: g1_to_hex(&proof.a),
+            b: g2_to_hex(&proof.b),
+            c: g1_to_hex(&proof.c),
+            nullifier: fr_to_hex(&nullifier),
+            commitment: fr_to_hex(&commitment),
+            error: None,
+        }),
+        Err(e) => Json(WalletGenerateProofResponse {
+            success: false, a: String::new(), b: String::new(), c: String::new(),
+            nullifier: String::new(), commitment: String::new(),
+            error: Some(format!("proof generation failed: {e}")),
+        }),
+    }
 }
 
 async fn export_transactions() -> impl IntoResponse {
-    let csv = "tx_hash,amount,amount_usd,customer_id,timestamp,datetime,status\n\
-               b22fc68201257be1983364139ff6043c5331b277758e78ba98f27a000bbadceb,4200,\"$42.00\",\"0xdeadbeef\",1719192000,2026-06-24T02:40:00Z,completed\n\
-               f12bb6c6a23901663a538967aa2d310ef570ccf03e4f506b0cf8572d3488c355,9900,\"$99.00\",\"0xaaaa0001\",1719192300,2026-06-24T02:45:00Z,completed\n";
+    let csv = "tx_hash,amount,amount_usd,customer_id,timestamp,datetime,status\n";
     (StatusCode::OK, [("Content-Type", "text/csv"), ("Content-Disposition", "attachment; filename=transactions.csv")], csv)
+}
+
+/// Serve the proving key so the customer can build proofs on-device
+async fn get_merchant_pk(
+    State(state): State<AppState>,
+    AxumPath(seed_hex): AxumPath<String>,
+) -> Json<MerchantPkResponse> {
+    let seed = parse_hex_seed(&seed_hex);
+    let merchant = {
+        let mut merchants = state.merchants.lock().unwrap();
+        get_or_create_merchant(&mut merchants, &seed)
+    };
+    let mut pk_bytes = Vec::new();
+    merchant.pk.serialize_compressed(&mut pk_bytes).unwrap();
+    Json(MerchantPkResponse {
+        pk_hex: hex::encode(pk_bytes),
+        merchant_id: fr_to_hex(&merchant.merchant_id),
+    })
+}
+
+async fn get_merchant_qr_info(
+    State(state): State<AppState>,
+    AxumPath(seed_hex): AxumPath<String>,
+) -> Json<MerchantQrInfo> {
+    let contract_id = state.contract_id.as_deref().unwrap_or("").to_string();
+    let seed = parse_hex_seed(&seed_hex);
+    let merchant = {
+        let mut merchants = state.merchants.lock().unwrap();
+        get_or_create_merchant(&mut merchants, &seed)
+    };
+    let base_url = format!("http://localhost:{}", std::env::var("PORT").unwrap_or_else(|_| "3000".into()));
+    Json(MerchantQrInfo {
+        api_url: base_url.clone(),
+        merchant_id: fr_to_hex(&merchant.merchant_id),
+        contract_id: contract_id.clone(),
+        pk_url: format!("{}/api/merchant/{}/pk", base_url, seed_hex),
+        seed_hex,
+    })
 }
 
 async fn generate_viewing_key() -> Json<ViewingKeyResponse> {
@@ -487,10 +744,14 @@ async fn main() {
         .route("/api/compliance/report", post(generate_compliance_report))
         .route("/api/compliance/viewing-key", post(generate_viewing_key))
         .route("/api/merchant/create", post(create_merchant))
-        .route("/api/payment/generate-proof", post(generate_proof))
-        .route("/api/payment/verify", post(verify_proof))
-        .route("/api/payment/submit-to-contract", post(submit_to_contract))
+        .route("/api/merchant/init-contract", post(init_contract))
         .route("/api/merchant/:merchant_id", get(get_merchant_info))
+        .route("/api/merchant/:seed_hex/pk", get(get_merchant_pk))
+        .route("/api/merchant/:seed_hex/payments", get(get_merchant_payments))
+        .route("/api/merchant/:seed_hex/balance", get(get_merchant_balance))
+        .route("/api/merchant/:seed_hex/qr-info", get(get_merchant_qr_info))
+        .route("/api/payment/submit-to-contract", post(submit_to_contract))
+        .route("/api/wallet/generate-proof", post(wallet_generate_proof))
         .route("/api/balance/:merchant_id", get(get_balance))
         .route("/api/export/transactions", get(export_transactions))
         .with_state(state);

@@ -44,10 +44,10 @@ export default function Navbar() {
               </Link>
             ))}
             <Link
-              to="/dashboard"
+              to="/onboard"
               className="inline-flex items-center px-4 py-2 rounded-lg bg-navy-900 text-white text-sm font-medium hover:bg-navy-800 transition-colors"
             >
-              Launch Console
+              Get Started Free
             </Link>
           </div>
 
