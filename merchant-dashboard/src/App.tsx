@@ -4,6 +4,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AppLayout from './components/AppLayout';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Features from './pages/Features';
 import Developers from './pages/Developers';
@@ -32,6 +33,14 @@ function App() {
           {/* Public site routes */}
           <Route
             path="/"
+            element={
+              <div className="min-h-screen bg-black">
+                <Landing />
+              </div>
+            }
+          />
+          <Route
+            path="/home"
             element={
               <div className="min-h-screen bg-white">
                 <Navbar />
