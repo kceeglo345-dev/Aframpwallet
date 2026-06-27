@@ -39,7 +39,7 @@ export default function Landing() {
               to="/dashboard"
               className="px-6 py-2 rounded-lg bg-emerald-500 text-black font-bold text-sm hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/30"
             >
-              Launch App
+              Connect Wallet
             </Link>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function Landing() {
                   to="/dashboard"
                   className="px-8 py-3 rounded-lg bg-emerald-500 text-black font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/30 text-center"
                 >
-                  Launch Console
+                  Connect Wallet
                 </Link>
                 <a
                   href="https://github.com/kelly-musk/Aframpwallet#quick-start"
@@ -332,7 +332,7 @@ export default function Landing() {
               to="/dashboard"
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-3 rounded-lg bg-emerald-500 text-black font-bold hover:bg-emerald-400 transition-all shadow-lg shadow-emerald-500/30"
             >
-              Launch Console
+              Connect Wallet
               <svg className="w-5 h-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
