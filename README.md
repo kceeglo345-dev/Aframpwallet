@@ -74,6 +74,35 @@ For merchants, this is a business liability:
 3. `commitment = secret × amount × customer` — Binds payment to customer
 4. `amount × inv(amount) = 1` — Ensures non-zero amount
 
+### End-to-End Privacy Flow
+
+```
+                        COMPLETE PRIVACY FLOW
+
+  Customer                       Merchant
+  ────────                       ────────
+
+  1. Customer pays
+     ├── Encrypt data (amount, customer)
+     ├── Generate commitment
+     └── Submit to contract
+
+  2. Contract
+     ├── Receives encrypted payment
+     ├── Stores on-chain (encrypted)
+     └── Nullifier prevents double-spend
+
+  3. Merchant opens dashboard
+     ├── Viewing key decrypts all payments
+     ├── Balance calculated client-side
+     └── Transactions visible only to merchant
+
+  4. Compliance (optional)
+     ├── Merchant shares viewing key
+     ├── Auditor decrypts transactions
+     └── Report generated
+```
+
 ## Demo
 
 **Live at:** [http://localhost:3000](http://localhost:3000)

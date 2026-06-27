@@ -9,3 +9,4 @@ serde_json = { workspace = true }
 hex = { workspace = true }
 ureq = { version = "3", features = ["json"] }
 dialoguer = "0.11"
+rand = { workspace = true }
