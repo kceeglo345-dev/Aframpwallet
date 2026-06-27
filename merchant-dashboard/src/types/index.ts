@@ -19,6 +19,7 @@ export interface DashboardStats {
   total_volume_usd: string;
   transaction_count: number;
   average_transaction: string;
+  balance: string;
   daily_volume: DailyVolume[];
   recent_payments: PaymentRecord[];
 }

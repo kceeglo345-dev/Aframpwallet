@@ -174,19 +174,18 @@ mod test {
     #[test]
     fn test_verify_valid_proof() {
         let env = Env::default();
-
         let mut rng = rand::thread_rng();
-        let mut seed = [0u8; 32];
-        rng.fill_bytes(&mut seed);
 
-        let merchant = privacy_circuits::MerchantPaymentSystem::new(&seed);
-        let secret = seed;
-        let mut customer = [0u8; 32];
-        rng.fill_bytes(&mut customer);
+        let mut merchant_id = [0u8; 32];
+        rng.fill_bytes(&mut merchant_id);
+        let merchant = privacy_circuits::MerchantPaymentSystem::new(&merchant_id);
 
-        let (proof, nullifier_fr, commitment_fr) = merchant
-            .generate_proof(&secret, 100, &customer)
-            .unwrap();
+        let mut customer_secret = [0u8; 32];
+        rng.fill_bytes(&mut customer_secret);
+
+        let (proof, nullifier_fr, commitment_fr) = privacy_circuits::customer_generate_proof(
+            &merchant.pk, &customer_secret, 100, &merchant_id,
+        ).unwrap();
 
         let soroban_vk = build_soroban_vk(&env, &merchant.vk);
         let soroban_proof = build_soroban_proof(&env, &proof);
@@ -199,12 +198,8 @@ mod test {
         ];
 
         let result = PrivacyPayment::verify_proof(
-            env.clone(),
-            soroban_vk,
-            soroban_proof,
-            pub_signals,
+            env.clone(), soroban_vk, soroban_proof, pub_signals,
         );
-
         assert!(result.is_ok());
         assert!(result.unwrap());
     }
@@ -212,23 +207,23 @@ mod test {
     #[test]
     fn test_verify_invalid_proof() {
         let env = Env::default();
-
         let mut rng = rand::thread_rng();
-        let mut seed = [0u8; 32];
-        rng.fill_bytes(&mut seed);
 
-        let merchant = privacy_circuits::MerchantPaymentSystem::new(&seed);
-        let secret = seed;
-        let mut customer = [0u8; 32];
-        rng.fill_bytes(&mut customer);
+        let mut merchant_id = [0u8; 32];
+        rng.fill_bytes(&mut merchant_id);
+        let merchant = privacy_circuits::MerchantPaymentSystem::new(&merchant_id);
 
-        let (proof, nullifier_fr, commitment_fr) = merchant
-            .generate_proof(&secret, 100, &customer)
-            .unwrap();
+        let mut customer_secret = [0u8; 32];
+        rng.fill_bytes(&mut customer_secret);
+
+        let (proof, nullifier_fr, commitment_fr) = privacy_circuits::customer_generate_proof(
+            &merchant.pk, &customer_secret, 100, &merchant_id,
+        ).unwrap();
 
         let soroban_vk = build_soroban_vk(&env, &merchant.vk);
         let soroban_proof = build_soroban_proof(&env, &proof);
 
+        // Wrong merchant_id should fail
         let pub_signals = vec![
             &env,
             ark_fr_to_soroban(&env, &ark_bn254::Fr::from(999u64)),
@@ -236,12 +231,8 @@ mod test {
             ark_fr_to_soroban(&env, &commitment_fr),
         ];
         let result = PrivacyPayment::verify_proof(
-            env.clone(),
-            soroban_vk,
-            soroban_proof,
-            pub_signals,
+            env.clone(), soroban_vk, soroban_proof, pub_signals,
         );
-
         assert!(result.is_ok());
         assert!(!result.unwrap());
     }
@@ -249,23 +240,23 @@ mod test {
     #[test]
     fn test_wrong_vk_rejects_proof() {
         let env = Env::default();
-
         let mut rng = rand::thread_rng();
-        let mut seed = [0u8; 32];
-        rng.fill_bytes(&mut seed);
 
-        let merchant = privacy_circuits::MerchantPaymentSystem::new(&seed);
-        let secret = seed;
-        let mut customer = [0u8; 32];
-        rng.fill_bytes(&mut customer);
+        let mut merchant_id = [0u8; 32];
+        rng.fill_bytes(&mut merchant_id);
+        let merchant = privacy_circuits::MerchantPaymentSystem::new(&merchant_id);
 
-        let (proof, nullifier_fr, commitment_fr) = merchant
-            .generate_proof(&secret, 100, &customer)
-            .unwrap();
+        let mut customer_secret = [0u8; 32];
+        rng.fill_bytes(&mut customer_secret);
 
-        let mut other_seed = [0u8; 32];
-        rng.fill_bytes(&mut other_seed);
-        let other_merchant = privacy_circuits::MerchantPaymentSystem::new(&other_seed);
+        let (proof, nullifier_fr, commitment_fr) = privacy_circuits::customer_generate_proof(
+            &merchant.pk, &customer_secret, 100, &merchant_id,
+        ).unwrap();
+
+        // Different merchant = different VK
+        let mut other_id = [0u8; 32];
+        rng.fill_bytes(&mut other_id);
+        let other_merchant = privacy_circuits::MerchantPaymentSystem::new(&other_id);
         let soroban_wrong_vk = build_soroban_vk(&env, &other_merchant.vk);
         let soroban_proof = build_soroban_proof(&env, &proof);
 
@@ -277,12 +268,8 @@ mod test {
         ];
 
         let result = PrivacyPayment::verify_proof(
-            env.clone(),
-            soroban_wrong_vk,
-            soroban_proof,
-            pub_signals,
+            env.clone(), soroban_wrong_vk, soroban_proof, pub_signals,
         );
-
         assert!(result.is_ok());
         assert!(!result.unwrap());
     }
@@ -290,19 +277,18 @@ mod test {
     #[test]
     fn test_malformed_vk_rejected() {
         let env = Env::default();
-
         let mut rng = rand::thread_rng();
-        let mut seed = [0u8; 32];
-        rng.fill_bytes(&mut seed);
 
-        let merchant = privacy_circuits::MerchantPaymentSystem::new(&seed);
-        let secret = seed;
-        let mut customer = [0u8; 32];
-        rng.fill_bytes(&mut customer);
+        let mut merchant_id = [0u8; 32];
+        rng.fill_bytes(&mut merchant_id);
+        let merchant = privacy_circuits::MerchantPaymentSystem::new(&merchant_id);
 
-        let (proof, nullifier_fr, commitment_fr) = merchant
-            .generate_proof(&secret, 100, &customer)
-            .unwrap();
+        let mut customer_secret = [0u8; 32];
+        rng.fill_bytes(&mut customer_secret);
+
+        let (proof, nullifier_fr, commitment_fr) = privacy_circuits::customer_generate_proof(
+            &merchant.pk, &customer_secret, 100, &merchant_id,
+        ).unwrap();
 
         let soroban_vk = build_soroban_vk(&env, &merchant.vk);
         let soroban_proof = build_soroban_proof(&env, &proof);
@@ -316,12 +302,8 @@ mod test {
         ];
 
         let result = PrivacyPayment::verify_proof(
-            env.clone(),
-            soroban_vk,
-            soroban_proof,
-            too_many_signals,
+            env.clone(), soroban_vk, soroban_proof, too_many_signals,
         );
-
         assert_eq!(result, Err(VerifierError::MalformedVerifyingKey));
     }
 
@@ -329,19 +311,18 @@ mod test {
     fn test_process_payment_full_flow() {
         let env = Env::default();
         let contract_id = env.register(PrivacyPayment, ());
-
         let mut rng = rand::thread_rng();
-        let mut seed = [0u8; 32];
-        rng.fill_bytes(&mut seed);
 
-        let merchant = privacy_circuits::MerchantPaymentSystem::new(&seed);
-        let secret = seed;
-        let mut customer = [0u8; 32];
-        rng.fill_bytes(&mut customer);
+        let mut merchant_id = [0u8; 32];
+        rng.fill_bytes(&mut merchant_id);
+        let merchant = privacy_circuits::MerchantPaymentSystem::new(&merchant_id);
 
-        let (proof, nullifier_fr, commitment_fr) = merchant
-            .generate_proof(&secret, 100, &customer)
-            .unwrap();
+        let mut customer_secret = [0u8; 32];
+        rng.fill_bytes(&mut customer_secret);
+
+        let (proof, nullifier_fr, commitment_fr) = privacy_circuits::customer_generate_proof(
+            &merchant.pk, &customer_secret, 100, &merchant_id,
+        ).unwrap();
 
         let soroban_vk = build_soroban_vk(&env, &merchant.vk);
         let soroban_proof = build_soroban_proof(&env, &proof);
@@ -356,7 +337,6 @@ mod test {
                 ark_fr_to_soroban(&env, &nullifier_fr),
                 ark_fr_to_soroban(&env, &commitment_fr),
             );
-
             assert!(result.is_ok());
             assert!(result.unwrap());
         });
@@ -366,19 +346,18 @@ mod test {
     fn test_nullifier_rejects_double_spend() {
         let env = Env::default();
         let contract_id = env.register(PrivacyPayment, ());
-
         let mut rng = rand::thread_rng();
-        let mut seed = [0u8; 32];
-        rng.fill_bytes(&mut seed);
 
-        let merchant = privacy_circuits::MerchantPaymentSystem::new(&seed);
-        let secret = seed;
-        let mut customer = [0u8; 32];
-        rng.fill_bytes(&mut customer);
+        let mut merchant_id = [0u8; 32];
+        rng.fill_bytes(&mut merchant_id);
+        let merchant = privacy_circuits::MerchantPaymentSystem::new(&merchant_id);
 
-        let (proof, nullifier_fr, commitment_fr) = merchant
-            .generate_proof(&secret, 100, &customer)
-            .unwrap();
+        let mut customer_secret = [0u8; 32];
+        rng.fill_bytes(&mut customer_secret);
+
+        let (proof, nullifier_fr, commitment_fr) = privacy_circuits::customer_generate_proof(
+            &merchant.pk, &customer_secret, 100, &merchant_id,
+        ).unwrap();
 
         let soroban_vk = build_soroban_vk(&env, &merchant.vk);
         let soroban_proof = build_soroban_proof(&env, &proof);
