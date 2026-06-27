@@ -12,6 +12,7 @@ import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Compliance from './pages/Compliance';
 import Settings from './pages/Settings';
+import Reports from './pages/Reports';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -84,6 +85,9 @@ function App() {
           </Route>
           <Route path="/transactions" element={<AppLayout />}>
             <Route index element={<Transactions />} />
+          </Route>
+          <Route path="/reports" element={<AppLayout />}>
+            <Route index element={<Reports />} />
           </Route>
           <Route path="/compliance" element={<AppLayout />}>
             <Route index element={<Compliance />} />

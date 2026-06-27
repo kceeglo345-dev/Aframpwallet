@@ -19,7 +19,7 @@ import { MerchantAPI } from '../services/api';
  * This demonstrates the most basic usage with loading and error handling.
  */
 export function ExampleSimplePage() {
-  const { data, isLoading, error } = useQuery({
+  const { isLoading, error } = useQuery({
     queryKey: ['example-data'],
     queryFn: () => MerchantAPI.getDashboardStats(),
   });
@@ -56,29 +56,29 @@ export function ExampleStatsPage() {
     ? [
         {
           label: 'Total Volume',
-          value: `$${stats.total_volume_usd.toFixed(2)}`,
+          value: typeof stats.total_volume_usd === 'string' ? stats.total_volume_usd : `$${Number(stats.total_volume_usd).toFixed(2)}`,
           icon: '💰',
-          color: 'blue',
+          color: 'blue' as const,
           trend: { value: 12, isPositive: true },
         },
         {
           label: 'Transactions',
           value: stats.transaction_count,
           icon: '📊',
-          color: 'green',
+          color: 'green' as const,
           trend: { value: 8, isPositive: true },
         },
         {
           label: 'Average Transaction',
-          value: `$${stats.average_transaction.toFixed(2)}`,
+          value: typeof stats.average_transaction === 'string' ? stats.average_transaction : `$${Number(stats.average_transaction).toFixed(2)}`,
           icon: '📈',
-          color: 'purple',
+          color: 'purple' as const,
         },
         {
           label: 'Active Days',
           value: stats.daily_volume.length,
           icon: '📅',
-          color: 'orange',
+          color: 'orange' as const,
         },
       ]
     : [];

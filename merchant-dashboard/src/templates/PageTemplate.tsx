@@ -1,60 +1,20 @@
-/**
- * PageTemplate
- * ────────────
- * A reusable template for creating new pages in the Aframp dashboard.
- * Includes header, content area, and common patterns for data loading and error states.
- *
- * Usage:
- * ```tsx
- * import PageTemplate from '@/templates/PageTemplate';
- *
- * export default function MyNewPage() {
- *   return (
- *     <PageTemplate
- *       title="My Page"
- *       subtitle="Optional description"
- *       icon={<Icon />}
- *       isLoading={isLoading}
- *       error={error}
- *     >
- *       {/* Your page content here */}
- *     </PageTemplate>
- *   );
- * }
- * ```
- */
-
-import React, { ReactNode } from 'react';
+import React, { type ReactNode } from 'react';
 
 export interface PageTemplateProps {
-  /** Page title displayed in header */
   title: string;
-  /** Optional subtitle or description */
   subtitle?: string;
-  /** Optional icon or badge to display next to title */
   icon?: ReactNode;
-  /** Page content */
   children: ReactNode;
-  /** Loading state - shows loading skeleton */
   isLoading?: boolean;
-  /** Error state - shows error message */
   error?: Error | string | null;
-  /** Custom action buttons for header (right side) */
   actions?: ReactNode;
-  /** Optional breadcrumb navigation */
   breadcrumb?: Array<{ label: string; href?: string }>;
-  /** Optional className for main content area */
   contentClassName?: string;
 }
 
-/**
- * LoadingState
- * Displays while data is being fetched
- */
 function LoadingState() {
   return (
     <div className="space-y-6">
-      {/* Header skeleton */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
@@ -62,7 +22,6 @@ function LoadingState() {
         </div>
       </div>
 
-      {/* Content skeleton */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="animate-pulse space-y-4">
           <div className="h-4 bg-gray-200 rounded"></div>
@@ -71,7 +30,6 @@ function LoadingState() {
         </div>
       </div>
 
-      {/* Card grid skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="bg-white rounded-lg shadow p-6">
@@ -86,10 +44,6 @@ function LoadingState() {
   );
 }
 
-/**
- * ErrorState
- * Displays when an error occurs
- */
 interface ErrorStateProps {
   error: Error | string;
 }
@@ -124,10 +78,6 @@ function ErrorState({ error }: ErrorStateProps) {
   );
 }
 
-/**
- * PageTemplate
- * Main template component combining header, breadcrumb, and content area
- */
 export default function PageTemplate({
   title,
   subtitle,
@@ -141,7 +91,6 @@ export default function PageTemplate({
 }: PageTemplateProps) {
   return (
     <div className="space-y-6">
-      {/* Breadcrumb Navigation */}
       {breadcrumb && breadcrumb.length > 0 && (
         <nav className="flex items-center space-x-2 text-sm text-gray-600">
           {breadcrumb.map((item, idx) => (
@@ -159,7 +108,6 @@ export default function PageTemplate({
         </nav>
       )}
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex items-center space-x-3">
           {icon && <div className="text-2xl">{icon}</div>}
@@ -169,11 +117,9 @@ export default function PageTemplate({
           </div>
         </div>
 
-        {/* Action Buttons */}
         {actions && <div className="flex items-center space-x-3">{actions}</div>}
       </div>
 
-      {/* Content Area */}
       {isLoading ? (
         <LoadingState />
       ) : error ? (
@@ -185,9 +131,6 @@ export default function PageTemplate({
   );
 }
 
-/**
- * Common Card Pattern - useful for content sections
- */
 export interface CardProps {
   title: string;
   subtitle?: string;
@@ -211,9 +154,6 @@ export function PageCard({ title, subtitle, children, className = '', headerActi
   );
 }
 
-/**
- * Stats Grid - for displaying key metrics
- */
 export interface StatItem {
   label: string;
   value: string | number;
@@ -222,7 +162,7 @@ export interface StatItem {
   color?: 'blue' | 'green' | 'purple' | 'orange' | 'red';
 }
 
-const colorClasses = {
+const colorClasses: Record<string, string> = {
   blue: 'bg-blue-100 text-blue-700',
   green: 'bg-green-100 text-green-700',
   purple: 'bg-purple-100 text-purple-700',
@@ -246,9 +186,7 @@ export function StatsGrid({ stats }: { stats: StatItem[] }) {
               )}
             </div>
             {stat.icon && (
-              <div
-                className={`p-3 rounded-lg ${stat.color && colorClasses[stat.color]} ${!stat.color && 'bg-gray-100 text-gray-600'}`}
-              >
+              <div className={`p-3 rounded-lg ${stat.color ? colorClasses[stat.color] : 'bg-gray-100 text-gray-600'}`}>
                 {stat.icon}
               </div>
             )}
@@ -259,9 +197,6 @@ export function StatsGrid({ stats }: { stats: StatItem[] }) {
   );
 }
 
-/**
- * Empty State - for when there's no data
- */
 export interface EmptyStateProps {
   icon?: ReactNode;
   title: string;
@@ -278,7 +213,7 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
       {action && (
         <button
           onClick={action.onClick}
-          className="mt-6 inline-flex items-center px-4 py-2 rounded-lg bg-navy-900 text-white font-medium hover:bg-navy-800 transition-colors"
+          className="mt-6 inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
         >
           {action.label}
         </button>
@@ -287,9 +222,6 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
   );
 }
 
-/**
- * ConfirmationModal - for critical actions
- */
 export interface ConfirmationModalProps {
   isOpen: boolean;
   title: string;
@@ -328,9 +260,7 @@ export function ConfirmationModal({
           <button
             onClick={onConfirm}
             className={`flex-1 px-4 py-2 rounded-lg text-white font-medium transition-colors ${
-              isDangerous
-                ? 'bg-red-600 hover:bg-red-700'
-                : 'bg-navy-900 hover:bg-navy-800'
+              isDangerous ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
             {confirmLabel}
