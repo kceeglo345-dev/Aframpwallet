@@ -44,3 +44,33 @@ export interface MerchantInfo {
   network: string;
   balance: string;
 }
+
+export interface ProvingKeyInfo {
+  merchant_id: string;
+  pk_hex: string;
+}
+
+export interface ProofResult {
+  a: string;
+  b: string;
+  c: string;
+  nullifier: string;
+  commitment: string;
+}
+
+export interface SubmitProofRequest {
+  seed: string;
+  a: string;
+  b: string;
+  c: string;
+  nullifier: string;
+  commitment: string;
+  amount: number;
+  customer_id: string;
+}
+
+export interface SubmitProofResponse {
+  success: boolean;
+  tx_hash?: string;
+  error?: string;
+}

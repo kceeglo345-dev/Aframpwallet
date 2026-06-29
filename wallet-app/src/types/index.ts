@@ -3,7 +3,7 @@ export interface MerchantInfo {
   merchant_id: string;
   contract_id: string;
   pk_url?: string;
-  seed_hex: string;
+  seed_hex?: string;
   merchant_name?: string;
 }
 

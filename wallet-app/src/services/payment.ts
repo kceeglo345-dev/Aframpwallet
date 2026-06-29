@@ -41,7 +41,7 @@ async function ensureWasm() {
   if (!wasmInit) {
     wasmInit = (async () => {
       try {
-        const wasm = await import('../../wallet-wasm/pkg/wallet_wasm.js');
+        const wasm = await import('wallet-wasm');
         await wasm.default();
         wasmModule = wasm;
       } catch {

@@ -1,3 +1,7 @@
 /target/
 **/*.rs.bk
 Cargo.lock
+.merchant/
+merchant_data/
+wallet-app/.expo/
+wallet-app/node_modules/

@@ -15,6 +15,7 @@ import Transactions from './pages/Transactions';
 import Compliance from './pages/Compliance';
 import Settings from './pages/Settings';
 import Reports from './pages/Reports';
+import PaymentDemo from './pages/PaymentDemo';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -115,6 +116,19 @@ function App() {
           <Route path="/settings" element={<AppLayout />}>
             <Route index element={<Settings />} />
           </Route>
+
+          <Route
+            path="/pay"
+            element={
+              <div className="min-h-screen bg-white">
+                <Navbar />
+                <main>
+                  <PaymentDemo />
+                </main>
+                <Footer />
+              </div>
+            }
+          />
         </Routes>
       </Router>
       <ReactQueryDevtools initialIsOpen={false} />

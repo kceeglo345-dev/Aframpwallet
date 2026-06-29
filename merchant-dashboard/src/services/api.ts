@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { DashboardStats, ComplianceReport, MerchantInfo } from '../types';
+import type { DashboardStats, ComplianceReport, MerchantInfo, ProvingKeyInfo, SubmitProofRequest, SubmitProofResponse } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -41,6 +41,16 @@ export const MerchantAPI = {
   generateViewingKey: async (): Promise<string> => {
     const response = await api.post('/compliance/viewing-key');
     return response.data.key;
+  },
+
+  getProvingKey: async (seedHex: string): Promise<ProvingKeyInfo> => {
+    const response = await api.get(`/merchant/${seedHex}/pk`);
+    return response.data;
+  },
+
+  submitProof: async (proof: SubmitProofRequest): Promise<SubmitProofResponse> => {
+    const response = await api.post('/payment/submit-to-contract', proof);
+    return response.data;
   },
 };
 

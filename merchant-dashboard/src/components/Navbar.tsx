@@ -8,6 +8,7 @@ const navigation = [
   { name: 'Developers', href: '/developers' },
   { name: 'About', href: '/about' },
   { name: 'Console', href: '/dashboard' },
+  { name: 'Pay Demo', href: '/pay' },
 ];
 
 export default function Navbar() {

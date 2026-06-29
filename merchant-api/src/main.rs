@@ -8,7 +8,7 @@ use aes_gcm::{
     aead::{Aead, KeyInit},
 };
 use ark_ff::{BigInteger, PrimeField};
-use ark_serialize::{CanonicalDeserialize, CanonicalSerialize};
+use ark_serialize::CanonicalSerialize;
 use axum::{
     Router,
     extract::{Path as AxumPath, State},
@@ -120,25 +120,6 @@ struct MerchantInfoJson {
     fee: String,
     network: String,
     balance: String,
-}
-
-#[derive(Deserialize)]
-struct WalletGenerateProofRequest {
-    pk_hex: String,
-    customer_secret: String,
-    amount: u64,
-    merchant_id: String,
-}
-
-#[derive(Serialize)]
-struct WalletGenerateProofResponse {
-    success: bool,
-    a: String,
-    b: String,
-    c: String,
-    nullifier: String,
-    commitment: String,
-    error: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -619,58 +600,6 @@ async fn get_balance(AxumPath(_merchant_id): AxumPath<String>) -> impl IntoRespo
     (StatusCode::OK, "0.00 (private)")
 }
 
-/// Generate a proof using the merchant's public key (pk).
-/// This is the DEMO path — production would use WASM on-device.
-async fn wallet_generate_proof(
-    Json(req): Json<WalletGenerateProofRequest>,
-) -> Json<WalletGenerateProofResponse> {
-    use privacy_circuits::customer_generate_proof;
-
-    let pk_bytes = match hex::decode(&req.pk_hex) {
-        Ok(b) => b,
-        Err(e) => return Json(WalletGenerateProofResponse {
-            success: false, a: String::new(), b: String::new(), c: String::new(),
-            nullifier: String::new(), commitment: String::new(),
-            error: Some(format!("invalid pk_hex: {e}")),
-        }),
-    };
-    let pk = match ark_groth16::ProvingKey::<ark_bn254::Bn254>::deserialize_compressed(&mut &pk_bytes[..]) {
-        Ok(p) => p,
-        Err(e) => return Json(WalletGenerateProofResponse {
-            success: false, a: String::new(), b: String::new(), c: String::new(),
-            nullifier: String::new(), commitment: String::new(),
-            error: Some(format!("invalid pk bytes: {e}")),
-        }),
-    };
-
-    let mut customer_secret = [0u8; 32];
-    let secret_bytes = hex::decode(&req.customer_secret).unwrap_or_default();
-    let len = secret_bytes.len().min(32);
-    customer_secret[..len].copy_from_slice(&secret_bytes[..len]);
-
-    let mut merchant_id = [0u8; 32];
-    let mid_bytes = hex::decode(&req.merchant_id).unwrap_or_default();
-    let len2 = mid_bytes.len().min(32);
-    merchant_id[..len2].copy_from_slice(&mid_bytes[..len2]);
-
-    match customer_generate_proof(&pk, &customer_secret, req.amount, &merchant_id) {
-        Ok((proof, nullifier, commitment)) => Json(WalletGenerateProofResponse {
-            success: true,
-            a: g1_to_hex(&proof.a),
-            b: g2_to_hex(&proof.b),
-            c: g1_to_hex(&proof.c),
-            nullifier: fr_to_hex(&nullifier),
-            commitment: fr_to_hex(&commitment),
-            error: None,
-        }),
-        Err(e) => Json(WalletGenerateProofResponse {
-            success: false, a: String::new(), b: String::new(), c: String::new(),
-            nullifier: String::new(), commitment: String::new(),
-            error: Some(format!("proof generation failed: {e}")),
-        }),
-    }
-}
-
 async fn export_transactions() -> impl IntoResponse {
     let csv = "tx_hash,amount,amount_usd,customer_id,timestamp,datetime,status\n";
     (StatusCode::OK, [("Content-Type", "text/csv"), ("Content-Disposition", "attachment; filename=transactions.csv")], csv)
@@ -751,7 +680,6 @@ async fn main() {
         .route("/api/merchant/:seed_hex/balance", get(get_merchant_balance))
         .route("/api/merchant/:seed_hex/qr-info", get(get_merchant_qr_info))
         .route("/api/payment/submit-to-contract", post(submit_to_contract))
-        .route("/api/wallet/generate-proof", post(wallet_generate_proof))
         .route("/api/balance/:merchant_id", get(get_balance))
         .route("/api/export/transactions", get(export_transactions))
         .with_state(state);

@@ -23,7 +23,9 @@
         "backgroundColor": "#0F172A"
       },
       "package": "com.aframp.wallet",
-      "permissions": ["android.permission.CAMERA"]
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "plugins": [
       [
@@ -32,7 +34,8 @@
           "cameraPermission": "Allow Aframp Wallet to access your camera to scan merchant QR codes."
         }
       ],
-      "expo-router"
+      "expo-router",
+      "expo-asset"
     ]
   }
 }
