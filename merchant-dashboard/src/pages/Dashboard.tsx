@@ -80,18 +80,6 @@ export default function Dashboard() {
     },
   };
 
-  const privateBalanceNote = (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800 flex items-start space-x-3">
-      <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-      </svg>
-      <div>
-        <p className="font-medium">Private Balance</p>
-        <p className="text-amber-700 text-xs mt-1">Your balance is computed from decrypted payment notes. On-chain balance shows <strong>$0.00</strong> — only you can see the real amount.</p>
-      </div>
-    </div>
-  );
-
   return (
     <PageTemplate
       title="Dashboard"

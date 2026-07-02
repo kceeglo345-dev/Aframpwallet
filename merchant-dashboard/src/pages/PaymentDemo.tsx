@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { initWasm, isWasmReady, generateProofClientSide } from '../services/wasmClient'
+import { initWasm, generateProofClientSide } from '../services/wasmClient'
 import { MerchantAPI } from '../services/api'
 import type { ProofResult, ProvingKeyInfo } from '../types'
 
@@ -13,7 +13,7 @@ export default function PaymentDemo() {
   const [proof, setProof] = useState<ProofResult | null>(null)
   const [txHash, setTxHash] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [step, setStep] = useState<Step>('init')
+  const [_step, setStep] = useState<Step>('init')
 
   useEffect(() => {
     initWasm()
