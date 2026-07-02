@@ -1,5 +1,23 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+
+function useInView(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect() } },
+      { threshold },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [threshold])
+
+  return [ref, inView] as const
+}
 
 const features = [
   {
@@ -92,16 +110,24 @@ const faqs = [
 ]
 
 const trustBadges = [
-  { name: 'Stellar', href: 'https://stellar.org' },
-  { name: 'Soroban', href: '#' },
-  { name: 'WebAssembly', href: '#' },
-  { name: 'Groth16', href: '#' },
-  { name: 'BN254', href: '#' },
+  { name: 'Stellar' },
+  { name: 'Soroban' },
+  { name: 'WebAssembly' },
+  { name: 'Groth16' },
+  { name: 'BN254' },
+  { name: 'Rust' },
+  { name: 'React' },
+  { name: 'Tailwind CSS' },
 ]
 
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [heroRef, heroIn] = useInView()
+  const [featuresRef, featuresIn] = useInView()
+  const [pillarsRef, pillarsIn] = useInView()
+  const [faqRef, faqIn] = useInView()
+  const [ctaRef, ctaIn] = useInView()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -110,9 +136,9 @@ export default function Landing() {
   }, [])
 
   return (
-    <div className="bg-[#0a0a0f] text-white min-h-screen">
+    <div className="bg-[#0a0a0f] text-white min-h-screen overflow-x-hidden">
       {/* ── Fixed Navbar ── */}
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled ? 'bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/50' : 'bg-transparent'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -135,24 +161,33 @@ export default function Landing() {
               <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">About</Link>
             </div>
 
-            <div className="flex items-center gap-4">
-              <Link
-                to="/dashboard"
-                className="hidden sm:inline-flex items-center px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-400 transition-colors"
-              >
-                Launch Console
-              </Link>
-            </div>
+            <Link
+              to="/dashboard"
+              className="hidden sm:inline-flex items-center px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-400 transition-all hover:shadow-lg hover:shadow-green-500/25"
+            >
+              Launch Console
+            </Link>
           </div>
         </div>
       </nav>
 
       {/* ── Hero ── */}
-      <section className="relative pt-36 pb-28 md:pt-44 md:pb-36 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 via-transparent to-transparent" />
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-green-500/8 rounded-full blur-3xl" />
+      <section
+        ref={heroRef}
+        className="relative pt-36 pb-28 md:pt-44 md:pb-36 overflow-hidden"
+      >
+        {/* Animated glow */}
+        <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 via-transparent to-transparent animate-fade-in" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-green-500/10 rounded-full blur-3xl animate-glow-pulse" />
+
+        {/* Floating decorative elements */}
+        <div className="absolute top-1/3 right-[10%] w-24 h-24 rounded-full bg-green-500/5 blur-2xl animate-float hidden lg:block" style={{ animationDelay: '0.5s' }} />
+        <div className="absolute bottom-1/4 left-[8%] w-32 h-32 rounded-full bg-green-400/5 blur-3xl animate-float hidden lg:block" style={{ animationDelay: '1s' }} />
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
+          <div className={`max-w-4xl mx-auto text-center transition-all duration-700 ${
+            heroIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}>
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
               Now Live on Stellar Testnet
@@ -175,7 +210,7 @@ export default function Landing() {
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500 text-white font-medium hover:bg-green-400 transition-colors shadow-lg shadow-green-500/25"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500 text-white font-medium hover:bg-green-400 transition-all hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
               >
                 Launch Console
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -186,7 +221,7 @@ export default function Landing() {
                 href="https://github.com/kelly-musk/Aframpwallet"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-all hover:-translate-y-0.5"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                   <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
@@ -195,15 +230,20 @@ export default function Landing() {
               </a>
             </div>
 
-            {/* Trust Badges */}
-            <div className="mt-16">
-              <p className="text-xs text-gray-500 uppercase tracking-widest mb-6">Built with</p>
-              <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-                {trustBadges.map((badge) => (
-                  <span key={badge.name} className="text-sm font-medium text-gray-600">
-                    {badge.name}
-                  </span>
-                ))}
+            {/* Marquee Trust Badges */}
+            <div className="mt-20 overflow-hidden">
+              <p className="text-xs text-gray-600 uppercase tracking-widest mb-6">Built with</p>
+              <div className="relative">
+                <div className="flex marquee-track">
+                  {[...trustBadges, ...trustBadges].map((badge, i) => (
+                    <span
+                      key={i}
+                      className="text-sm font-medium text-gray-600 whitespace-nowrap"
+                    >
+                      {badge.name}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -211,9 +251,15 @@ export default function Landing() {
       </section>
 
       {/* ── Features ── */}
-      <section id="features" className="py-24 relative">
+      <section
+        id="features"
+        ref={featuresRef}
+        className="py-24 relative"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto">
+          <div className={`text-center max-w-2xl mx-auto transition-all duration-700 ${
+            featuresIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}>
             <h2 className="text-3xl sm:text-4xl font-bold text-white">
               Everything you need for private payments
             </h2>
@@ -223,22 +269,29 @@ export default function Landing() {
           </div>
 
           <div className="mt-16 grid md:grid-cols-3 gap-6">
-            {features.map((f) => (
+            {features.map((f, i) => (
               <div
                 key={f.title}
-                className="group relative p-8 rounded-2xl bg-gray-900/50 border border-gray-800 hover:border-green-500/30 transition-all duration-300"
+                className={`group relative p-8 rounded-2xl bg-gray-900/50 border border-gray-800 hover:border-green-500/30 transition-all duration-500 ${
+                  featuresIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{
+                  transitionDelay: `${i * 150}ms`,
+                  transitionProperty: 'opacity, transform, border-color',
+                  transitionDuration: '0.5s',
+                }}
               >
-                <div className="w-12 h-12 rounded-xl bg-green-500/10 text-green-400 flex items-center justify-center mb-5 group-hover:bg-green-500/20 transition-colors">
+                <div className="w-12 h-12 rounded-xl bg-green-500/10 text-green-400 flex items-center justify-center mb-5 group-hover:bg-green-500/20 group-hover:scale-110 transition-all duration-300">
                   {f.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-3">{f.title}</h3>
+                <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-green-300 transition-colors">{f.title}</h3>
                 <p className="text-sm text-gray-400 leading-relaxed mb-6">{f.desc}</p>
                 <Link
                   to={f.href}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-green-400 hover:text-green-300 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-green-400 hover:text-green-300 transition-colors group/link"
                 >
                   {f.cta}
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <svg className="w-4 h-4 transition-transform duration-200 group-hover/link:translate-x-1" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                 </Link>
@@ -249,12 +302,21 @@ export default function Landing() {
       </section>
 
       {/* ── Value Pillars ── */}
-      <section className="py-24 border-t border-gray-800/50">
+      <section
+        ref={pillarsRef}
+        className="py-24 border-t border-gray-800/50"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-12">
-            {pillars.map((p) => (
-              <div key={p.title} className="text-center">
-                <div className="w-16 h-16 rounded-2xl bg-green-500/10 text-green-400 flex items-center justify-center mx-auto mb-5">
+            {pillars.map((p, i) => (
+              <div
+                key={p.title}
+                className={`text-center transition-all duration-700 ${
+                  pillarsIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: `${i * 150}ms` }}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-green-500/10 text-green-400 flex items-center justify-center mx-auto mb-5 hover:scale-110 hover:bg-green-500/20 transition-all duration-300">
                   {p.icon}
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-3">{p.title}</h3>
@@ -266,9 +328,14 @@ export default function Landing() {
       </section>
 
       {/* ── FAQ ── */}
-      <section className="py-24 border-t border-gray-800/50">
+      <section
+        ref={faqRef}
+        className="py-24 border-t border-gray-800/50"
+      >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className={`text-center mb-16 transition-all duration-700 ${
+            faqIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}>
             <h2 className="text-3xl sm:text-4xl font-bold text-white">Frequently Asked Questions</h2>
           </div>
 
@@ -276,7 +343,10 @@ export default function Landing() {
             {faqs.map((faq, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-gray-800 overflow-hidden transition-colors hover:border-gray-700"
+                className={`rounded-xl border border-gray-800 overflow-hidden transition-all duration-500 hover:border-gray-700 ${
+                  faqIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+                }`}
+                style={{ transitionDelay: `${i * 100}ms` }}
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -284,8 +354,8 @@ export default function Landing() {
                 >
                   {faq.q}
                   <svg
-                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${
-                      openFaq === i ? 'rotate-180' : ''
+                    className={`w-4 h-4 text-gray-500 transition-all duration-300 ${
+                      openFaq === i ? 'rotate-180 text-green-400' : ''
                     }`}
                     fill="none"
                     viewBox="0 0 24 24"
@@ -295,11 +365,15 @@ export default function Landing() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </svg>
                 </button>
-                {openFaq === i && (
+                <div
+                  className={`overflow-hidden transition-all duration-300 ${
+                    openFaq === i ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}
+                >
                   <div className="px-6 pb-4 text-sm text-gray-400 leading-relaxed">
                     {faq.a}
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
@@ -307,9 +381,15 @@ export default function Landing() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-24 border-t border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-2xl mx-auto text-center">
+      <section
+        ref={ctaRef}
+        className="py-24 border-t border-gray-800/50 relative overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-green-500/3 via-transparent to-green-500/3" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={`max-w-2xl mx-auto text-center transition-all duration-700 ${
+            ctaIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}>
             <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
               Ready for private payments on Stellar?
             </h2>
@@ -319,7 +399,7 @@ export default function Landing() {
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500 text-white font-medium hover:bg-green-400 transition-colors shadow-lg shadow-green-500/25"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500 text-white font-medium hover:bg-green-400 transition-all hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
               >
                 Get Started Free
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
@@ -328,7 +408,7 @@ export default function Landing() {
               </Link>
               <Link
                 to="/developers"
-                className="inline-flex items-center px-6 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-colors"
+                className="inline-flex items-center px-6 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-all hover:-translate-y-0.5"
               >
                 Read Documentation
               </Link>
