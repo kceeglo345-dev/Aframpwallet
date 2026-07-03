@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import aframpLogo from '../assets/3_3.png';
+const aframpLogo = '/Screenshot_from_2026-07-03_03-28-36 copy.png';
 
 const sidebarLinks = [
   {
