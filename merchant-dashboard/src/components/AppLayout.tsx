@@ -81,7 +81,7 @@ export default function AppLayout() {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex">
+    <div className="min-h-screen bg-black flex">
       {/* Sidebar */}
       <aside className="fixed top-0 left-0 z-40 w-[220px] h-screen bg-[#0d0d14] border-r border-white/5 flex flex-col">
         {/* Logo */}
@@ -99,11 +99,11 @@ export default function AppLayout() {
                 to={link.href}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
-                    ? 'bg-green-500/15 text-green-400 border border-green-500/20'
+                    ? 'bg-[#2ed42b]/15 text-[#2ed42b] border border-[#2ed42b]/25'
                     : 'text-gray-500 hover:text-gray-300 hover:bg-white/4'
                 }`}
               >
-                <span className={isActive ? 'text-green-400' : 'text-gray-600'}>{link.icon}</span>
+                <span className={isActive ? 'text-[#2ed42b]' : 'text-gray-600'}>{link.icon}</span>
                 {link.name}
               </Link>
             );
@@ -112,9 +112,9 @@ export default function AppLayout() {
 
         {/* Bottom badge */}
         <div className="p-3 border-t border-white/5">
-          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-500/8 border border-green-500/15">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs text-green-400 font-medium">Testnet Active</span>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#2ed42b]/8 border border-[#2ed42b]/15">
+            <span className="w-2 h-2 rounded-full bg-[#2ed42b] animate-pulse" />
+            <span className="text-xs text-[#2ed42b] font-medium">Testnet Active</span>
           </div>
         </div>
       </aside>
@@ -122,12 +122,12 @@ export default function AppLayout() {
       {/* Main */}
       <div className="flex-1 ml-[220px] flex flex-col min-h-screen">
         {/* Top bar */}
-        <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-[#0a0a0f]/80 backdrop-blur-xl border-b border-white/5">
+        <header className="sticky top-0 z-30 h-16 flex items-center justify-between px-6 bg-black/80 backdrop-blur-xl border-b border-white/5">
           <div className="flex items-center gap-2 text-sm text-gray-400">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
             </svg>
-            <span className="font-semibold text-white capitalize">
+            <span className="font-bold text-white capitalize">
               {sidebarLinks.find(l => l.href === location.pathname)?.name || 'Console'}
             </span>
           </div>
@@ -141,8 +141,8 @@ export default function AppLayout() {
             </button>
 
             {/* Network pill */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111118] border border-white/8 text-xs font-semibold text-white">
-              <span className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#111118] border border-white/8 text-xs font-bold text-white">
+              <span className="w-2 h-2 rounded-full bg-[#2ed42b]" />
               TESTNET
               <svg className="w-3 h-3 text-gray-500" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -150,7 +150,7 @@ export default function AppLayout() {
             </div>
 
             {/* Connect Wallet button */}
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-400 transition-colors text-sm font-semibold text-white cursor-pointer">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2ed42b] hover:bg-[#22b020] transition-colors text-sm font-bold text-black cursor-pointer">
               Connect Wallet
             </button>
           </div>

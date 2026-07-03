@@ -98,13 +98,13 @@ export default function PaymentDemo() {
       {/* WASM status banner */}
       <div className={`flex items-center gap-3 p-4 rounded-2xl border ${
         wasmStatus === 'ready'
-          ? 'bg-green-500/8 border-green-500/20'
+          ? 'bg-[#2ed42b]/8 border-[#2ed42b]/20'
           : wasmStatus === 'error'
             ? 'bg-red-500/8 border-red-500/20'
             : 'bg-yellow-500/8 border-yellow-500/20'
       }`}>
         <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          wasmStatus === 'ready' ? 'bg-green-500/15 text-green-400' :
+          wasmStatus === 'ready' ? 'bg-[#2ed42b]/15 text-[#2ed42b]' :
           wasmStatus === 'error' ? 'bg-red-500/15 text-red-400' :
           'bg-yellow-500/15 text-yellow-400'
         }`}>
@@ -163,7 +163,7 @@ export default function PaymentDemo() {
       {/* Step 1: Fetch PK */}
       <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
         <div className="flex items-center gap-2 mb-4">
-          <span className="w-6 h-6 rounded-lg bg-green-500/15 text-green-400 flex items-center justify-center text-xs font-bold">1</span>
+          <span className="w-6 h-6 rounded-lg bg-green-500/15 text-[#2ed42b] flex items-center justify-center text-xs font-bold">1</span>
           <h2 className="text-base font-semibold text-white">Fetch Merchant Proving Key</h2>
         </div>
         <div className="flex gap-3">
@@ -177,7 +177,7 @@ export default function PaymentDemo() {
           <button
             onClick={handleFetchPk}
             disabled={!seedHex.trim() || wasmStatus !== 'ready'}
-            className="px-5 py-2.5 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="px-5 py-2.5 bg-[#2ed42b] text-black rounded-xl text-sm font-bold hover:bg-[#22b020] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             Fetch PK
           </button>
@@ -196,7 +196,7 @@ export default function PaymentDemo() {
       {pkInfo && (
         <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-6 h-6 rounded-lg bg-green-500/15 text-green-400 flex items-center justify-center text-xs font-bold">2</span>
+            <span className="w-6 h-6 rounded-lg bg-green-500/15 text-[#2ed42b] flex items-center justify-center text-xs font-bold">2</span>
             <h2 className="text-base font-semibold text-white">Enter Payment Amount</h2>
           </div>
           <div className="flex gap-3">
@@ -213,7 +213,7 @@ export default function PaymentDemo() {
             <button
               onClick={handleGenerateProof}
               disabled={!amount || parseFloat(amount) <= 0}
-              className="px-5 py-2.5 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              className="px-5 py-2.5 bg-[#2ed42b] text-black rounded-xl text-sm font-bold hover:bg-[#22b020] disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               Generate Proof
             </button>
@@ -228,18 +228,18 @@ export default function PaymentDemo() {
       {proof && (
         <div className="bg-[#111118] border border-green-500/20 rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-6 h-6 rounded-lg bg-green-500 text-white flex items-center justify-center text-xs font-bold">✓</span>
+            <span className="w-6 h-6 rounded-lg bg-[#2ed42b] text-black flex items-center justify-center text-xs font-bold">✓</span>
             <h2 className="text-base font-semibold text-white">Proof Generated</h2>
-            <span className="ml-auto text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20">Valid</span>
+            <span className="ml-auto text-xs text-[#2ed42b] bg-[#2ed42b]/10 px-2 py-1 rounded-full border border-[#2ed42b]/20">Valid</span>
           </div>
           <div className="space-y-2 text-xs font-mono">
             <div className="flex gap-2 p-3 rounded-xl bg-[#0d0d14] border border-white/5">
               <span className="text-gray-600 flex-shrink-0">nullifier:</span>
-              <span className="text-green-400 break-all">{proof.nullifier}</span>
+              <span className="text-[#2ed42b] break-all">{proof.nullifier}</span>
             </div>
             <div className="flex gap-2 p-3 rounded-xl bg-[#0d0d14] border border-white/5">
               <span className="text-gray-600 flex-shrink-0">commitment:</span>
-              <span className="text-green-400 break-all">{proof.commitment}</span>
+              <span className="text-[#2ed42b] break-all">{proof.commitment}</span>
             </div>
             <div className="flex gap-2 p-3 rounded-xl bg-[#0d0d14] border border-white/5">
               <span className="text-gray-600 flex-shrink-0">proof.a:</span>
@@ -248,7 +248,7 @@ export default function PaymentDemo() {
           </div>
           <button
             onClick={handleSubmit}
-            className="mt-4 w-full py-3 bg-green-500 text-white rounded-xl text-sm font-semibold hover:bg-green-400 transition-colors cursor-pointer"
+            className="mt-4 w-full py-3 bg-[#2ed42b] text-black rounded-xl text-sm font-bold hover:bg-[#22b020] transition-colors cursor-pointer"
           >
             Submit to Soroban Contract
           </button>
@@ -257,15 +257,15 @@ export default function PaymentDemo() {
 
       {/* Step 4: Success */}
       {txHash && (
-        <div className="bg-green-500/8 border border-green-500/20 rounded-2xl p-6 text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-green-500/20 flex items-center justify-center">
-            <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+        <div className="bg-[#2ed42b]/8 border border-[#2ed42b]/20 rounded-2xl p-6 text-center">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-[#2ed42b]/20 flex items-center justify-center">
+            <svg className="w-6 h-6 text-[#2ed42b]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
           </div>
           <h2 className="text-base font-semibold text-white mb-1">Payment Submitted</h2>
           <p className="text-xs text-gray-500 mb-3">Your private payment has been verified on-chain</p>
-          <p className="text-xs text-green-400 font-mono break-all bg-[#0d0d14] p-3 rounded-xl border border-white/5">
+          <p className="text-xs text-[#2ed42b] font-mono break-all bg-[#0d0d14] p-3 rounded-xl border border-white/5">
             {txHash}
           </p>
         </div>

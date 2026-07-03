@@ -1,37 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 
 @theme {
-  --color-green-50: #ecfdf5;
-  --color-green-100: #d1fae5;
-  --color-green-200: #a7f3d0;
-  --color-green-300: #6ee7b7;
-  --color-green-400: #34d399;
-  --color-green-500: #10b981;
-  --color-green-600: #059669;
-  --color-green-700: #047857;
-  --color-green-800: #065f46;
-  --color-green-900: #064e3b;
-  --color-green-950: #022c22;
+  /* Brand greens — Aframp brand #2ed42b */
+  --color-green-50: #f0fdf0;
+  --color-green-100: #dcfcdc;
+  --color-green-200: #bbf7bb;
+  --color-green-300: #86ef86;
+  --color-green-400: #4fde4f;
+  --color-green-500: #2ed42b;
+  --color-green-600: #22b020;
+  --color-green-700: #1a8a18;
+  --color-green-800: #186b16;
+  --color-green-900: #155914;
+  --color-green-950: #063208;
 
-  --color-navy-50: #ecfdf5;
-  --color-navy-100: #d1fae5;
-  --color-navy-200: #a7f3d0;
-  --color-navy-300: #6ee7b7;
-  --color-navy-400: #34d399;
-  --color-navy-500: #10b981;
-  --color-navy-600: #059669;
-  --color-navy-700: #047857;
-  --color-navy-800: #065f46;
-  --color-navy-900: #064e3b;
-  --color-navy-950: #022c22;
+  /* Dark brand green panel */
+  --color-brand-dark: #006b00;
+  --color-brand-green: #2ed42b;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
 }
 
 html {

@@ -37,7 +37,7 @@ export default function Transactions() {
         </div>
         <button
           onClick={() => MerchantAPI.exportTransactions()}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-400 transition-colors text-sm font-semibold text-white cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2ed42b] hover:bg-[#22b020] transition-colors text-sm font-bold text-black cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -54,7 +54,7 @@ export default function Transactions() {
             onClick={() => setStatusFilter(status)}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium capitalize transition-all cursor-pointer ${
               statusFilter === status
-                ? 'bg-green-500/15 text-green-400 border border-green-500/25'
+                ? 'bg-[#2ed42b]/15 text-[#2ed42b] border border-[#2ed42b]/25'
                 : 'bg-[#111118] text-gray-500 border border-white/8 hover:text-gray-300'
             }`}
           >
@@ -73,7 +73,7 @@ export default function Transactions() {
           placeholder="Search by customer ID or transaction hash..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2.5 bg-[#111118] border border-white/8 rounded-xl text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-green-500/30 transition-colors"
+          className="w-full pl-10 pr-4 py-2.5 bg-[#111118] border border-white/8 rounded-xl text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#2ed42b]/30 transition-colors"
         />
       </div>
 
@@ -104,14 +104,14 @@ export default function Transactions() {
                       <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${
                           payment.status === 'completed'
-                            ? 'bg-green-500/10 text-green-400 border border-green-500/20'
+                            ? 'bg-[#2ed42b]/10 text-[#2ed42b] border border-[#2ed42b]/20'
                             : payment.status === 'pending'
                               ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
                               : 'bg-red-500/10 text-red-400 border border-red-500/20'
                         }`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full ${
-                          payment.status === 'completed' ? 'bg-green-400' :
+                          payment.status === 'completed' ? 'bg-[#2ed42b]' :
                           payment.status === 'pending' ? 'bg-yellow-400' : 'bg-red-400'
                         }`} />
                         {payment.status}

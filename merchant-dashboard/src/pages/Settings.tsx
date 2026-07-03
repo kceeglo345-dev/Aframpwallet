@@ -68,8 +68,8 @@ export default function Settings() {
               </div>
               <div className="p-3 rounded-xl bg-[#0d0d14] border border-white/5">
                 <p className="text-xs text-gray-500">Status</p>
-                <p className="text-sm text-green-400 mt-1 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <p className="text-sm text-[#2ed42b] mt-1 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#2ed42b]" />
                   Active
                 </p>
               </div>
@@ -86,7 +86,7 @@ export default function Settings() {
                     <p className="text-sm font-medium text-white">{setting.title}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{setting.desc}</p>
                   </div>
-                  <div className={`relative w-10 h-6 rounded-full transition-colors ${setting.enabled ? 'bg-green-500' : 'bg-gray-700'}`}>
+                  <div className={`relative w-10 h-6 rounded-full transition-colors ${setting.enabled ? 'bg-[#2ed42b]' : 'bg-gray-700'}`}>
                     <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${setting.enabled ? 'translate-x-4' : 'translate-x-0.5'}`} />
                   </div>
                 </div>
@@ -139,7 +139,7 @@ export default function Settings() {
 
             <div className="mt-4 flex gap-2">
               <button
-                className="text-xs bg-green-500 text-white px-3 py-1.5 rounded-lg hover:bg-green-400 transition-colors cursor-pointer"
+                className="text-xs bg-[#2ed42b] text-black px-3 py-1.5 rounded-lg hover:bg-[#22b020] transition-colors cursor-pointer"
                 onClick={() => navigator.clipboard.writeText(aframpUrl)}
               >
                 Copy URL
@@ -153,8 +153,8 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="mt-4 p-3 rounded-xl bg-green-500/8 border border-green-500/15">
-            <p className="text-xs text-green-400">
+          <div className="mt-4 p-3 rounded-xl bg-[#2ed42b]/8 border border-[#2ed42b]/15">
+            <p className="text-xs text-[#2ed42b]">
               <strong>How it works:</strong> Customer opens Aframp Wallet, scans this QR, enters amount, and pays. The payment is ZK-encrypted — only your viewing key can decrypt it.
             </p>
           </div>

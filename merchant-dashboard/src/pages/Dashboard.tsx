@@ -38,7 +38,7 @@ export default function Dashboard() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-[#111118] border border-white/8 rounded-2xl p-5 hover:border-green-500/20 transition-colors"
+            className="bg-[#111118] border border-white/8 rounded-2xl p-5 hover:border-[#2ed42b]/20 transition-colors"
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{stat.label}</span>
@@ -46,7 +46,7 @@ export default function Dashboard() {
             </div>
             <p className="text-2xl font-bold text-white">{stat.value}</p>
             <div className="mt-2 flex items-center gap-1.5">
-              <span className={`text-xs font-medium ${stat.positive ? 'text-green-400' : 'text-red-400'}`}>
+              <span className={`text-xs font-medium ${stat.positive ? 'text-[#2ed42b]' : 'text-red-400'}`}>
                 {stat.positive ? '↑' : '↓'} {stat.change}
               </span>
               <span className="text-xs text-gray-600">vs last week</span>
@@ -63,11 +63,11 @@ export default function Dashboard() {
             <Link
               key={action.label}
               to={action.href}
-              className="group flex flex-col gap-2 p-4 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-green-500/25 hover:bg-green-500/5 transition-all"
+              className="group flex flex-col gap-2 p-4 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-[#2ed42b]/25 hover:bg-[#2ed42b]/5 transition-all"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xl">{action.icon}</span>
-                <svg className="w-4 h-4 text-gray-700 group-hover:text-green-400 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <svg className="w-4 h-4 text-gray-700 group-hover:text-[#2ed42b] transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                 </svg>
               </div>
@@ -85,7 +85,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 bg-[#111118] border border-white/8 rounded-2xl p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-semibold text-white">Recent Activity</h2>
-            <Link to="/transactions" className="text-xs text-green-400 hover:text-green-300 font-medium">View all →</Link>
+            <Link to="/transactions" className="text-xs text-[#2ed42b] hover:text-[#22b020] font-medium">View all →</Link>
           </div>
           <div className="space-y-2">
             {recentActivity.map((item, i) => (
@@ -94,7 +94,7 @@ export default function Dashboard() {
                 className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-white/10 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${item.status === 'confirmed' ? 'bg-green-400' : 'bg-gray-600'}`} />
+                  <div className={`w-2 h-2 rounded-full ${item.status === 'confirmed' ? 'bg-[#2ed42b]' : 'bg-gray-600'}`} />
                   <div>
                     <span className="text-sm text-gray-300">{item.action}</span>
                     {item.customer && (
@@ -117,14 +117,14 @@ export default function Dashboard() {
         <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
           <h2 className="text-base font-semibold text-white mb-5">Privacy Status</h2>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-green-500/8 border border-green-500/15">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-[#2ed42b]/8 border border-[#2ed42b]/15">
               <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <svg className="w-4 h-4 text-[#2ed42b]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                 </svg>
-                <span className="text-sm text-green-400 font-medium">ZK Proofs Active</span>
+                <span className="text-sm text-[#2ed42b] font-medium">ZK Proofs Active</span>
               </div>
-              <span className="text-xs text-green-400">100%</span>
+              <span className="text-xs text-[#2ed42b]">100%</span>
             </div>
 
             <div className="space-y-3">
@@ -140,7 +140,7 @@ export default function Dashboard() {
                   </div>
                   <div className="h-1.5 bg-[#0d0d14] rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
+                      className="h-full bg-gradient-to-r from-[#2ed42b] to-[#2ed42b] rounded-full"
                       style={{ width: `${(parseInt(item.value) / parseInt(item.total)) * 100}%` }}
                     />
                   </div>
@@ -159,7 +159,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center justify-between text-xs mt-2">
                 <span className="text-gray-500">Settlement</span>
-                <span className="text-green-400">3-5s avg</span>
+                <span className="text-[#2ed42b]">3-5s avg</span>
               </div>
             </div>
           </div>

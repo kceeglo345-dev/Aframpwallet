@@ -95,7 +95,7 @@ export default function Compliance() {
           <button
             onClick={() => exportMutation.mutate()}
             disabled={exportMutation.isPending}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-500 text-sm font-semibold text-white hover:bg-green-400 disabled:opacity-50 transition-colors cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2ed42b] text-sm font-bold text-black hover:bg-[#22b020] disabled:opacity-50 transition-colors cursor-pointer"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -119,7 +119,7 @@ export default function Compliance() {
       <div className="grid sm:grid-cols-2 gap-4">
         {complianceFeatures.map((feature) => (
           <div key={feature.title} className="bg-[#111118] border border-white/8 rounded-2xl p-5 flex items-start gap-4">
-            <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-lg flex-shrink-0">
+            <div className="w-10 h-10 rounded-xl bg-[#2ed42b]/10 border border-[#2ed42b]/20 flex items-center justify-center text-lg flex-shrink-0">
               {feature.icon}
             </div>
             <div>

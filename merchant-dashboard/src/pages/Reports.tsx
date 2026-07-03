@@ -25,7 +25,7 @@ export default function Reports() {
           <h1 className="text-2xl font-bold text-white">Distribution</h1>
           <p className="text-sm text-gray-500 mt-1">Generate and manage detailed business reports</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500 hover:bg-green-400 transition-colors text-sm font-semibold text-white cursor-pointer">
+        <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2ed42b] hover:bg-[#22b020] transition-colors text-sm font-bold text-black cursor-pointer">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
@@ -65,8 +65,8 @@ export default function Reports() {
                 className="flex items-center justify-between p-4 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-white/10 transition-colors"
               >
                 <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                  <div className="w-10 h-10 rounded-xl bg-[#2ed42b]/10 border border-[#2ed42b]/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#2ed42b]" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                     </svg>
                   </div>
@@ -78,7 +78,7 @@ export default function Reports() {
                 <div className="flex items-center gap-3">
                   {report.status === 'ready' ? (
                     <>
-                      <button className="text-xs font-medium text-green-400 hover:text-green-300 transition-colors px-3 py-1.5 rounded-lg hover:bg-green-500/10 cursor-pointer">
+                      <button className="text-xs font-medium text-[#2ed42b] hover:text-[#22b020] transition-colors px-3 py-1.5 rounded-lg hover:bg-[#2ed42b]/10 cursor-pointer">
                         Download
                       </button>
                       <button
@@ -125,13 +125,13 @@ export default function Reports() {
                 <p className="text-sm font-medium text-white">{setting.label}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{setting.desc}</p>
               </div>
-              <div className={`relative w-10 h-6 rounded-full transition-colors ${setting.checked ? 'bg-green-500' : 'bg-gray-700'}`}>
+              <div className={`relative w-10 h-6 rounded-full transition-colors ${setting.checked ? 'bg-[#2ed42b]' : 'bg-gray-700'}`}>
                 <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white transition-transform ${setting.checked ? 'translate-x-4' : 'translate-x-0.5'}`} />
               </div>
             </label>
           ))}
         </div>
-        <button className="mt-4 px-4 py-2 rounded-xl bg-green-500 text-white text-sm font-semibold hover:bg-green-400 transition-colors cursor-pointer">
+        <button className="mt-4 px-4 py-2 rounded-xl bg-[#2ed42b] text-black text-sm font-bold hover:bg-[#22b020] transition-colors cursor-pointer">
           Save Preferences
         </button>
       </div>
