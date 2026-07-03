@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { Separator } from '../components/ui/separator';
-import aframpLogo from '../assets/3_3.png';
+const aframpLogo = '/Screenshot_from_2026-07-03_03-28-36 copy.png';
 
 const navigationItems = [
   { label: 'Features', href: '#features' },
