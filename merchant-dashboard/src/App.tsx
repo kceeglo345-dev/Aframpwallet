@@ -35,7 +35,7 @@ function App() {
           <Route
             path="/"
             element={
-              <div className="min-h-screen bg-[#0a0a0f]">
+              <div className="min-h-screen bg-[#102216]">
                 <Landing />
               </div>
             }

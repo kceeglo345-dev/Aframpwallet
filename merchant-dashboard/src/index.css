@@ -1,32 +1,39 @@
-@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
 @import "tailwindcss";
 @plugin "@tailwindcss/forms";
 @plugin "@tailwindcss/typography";
 
 @theme {
-  /* Brand greens — Aframp brand #2ed42b */
+  /* Aframp brand greens from Figma */
+  --color-brand-green: #13ec5b;
+  --color-brand-green-dark: #16a34a;
+  --color-brand-bg: #001a0a;
+  --color-brand-surface: #102216;
+  --color-brand-surface-light: #112217;
+  --color-brand-card: #193322;
+  --color-brand-card-alt: #1a3322;
+  --color-brand-border: #23482f;
+  --color-brand-text: #112217;
+
+  /* Keep green ramp for backward compat (dashboard pages) */
   --color-green-50: #f0fdf0;
   --color-green-100: #dcfcdc;
   --color-green-200: #bbf7bb;
   --color-green-300: #86ef86;
   --color-green-400: #4fde4f;
-  --color-green-500: #2ed42b;
-  --color-green-600: #22b020;
-  --color-green-700: #1a8a18;
-  --color-green-800: #186b16;
-  --color-green-900: #155914;
-  --color-green-950: #063208;
-
-  /* Dark brand green panel */
-  --color-brand-dark: #006b00;
-  --color-brand-green: #2ed42b;
+  --color-green-500: #13ec5b;
+  --color-green-600: #16a34a;
+  --color-green-700: #15803d;
+  --color-green-800: #166534;
+  --color-green-900: #14532d;
+  --color-green-950: #052e16;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+  font-family: 'Manrope', system-ui, -apple-system, sans-serif;
 }
 
 html {
@@ -34,14 +41,8 @@ html {
 }
 
 @keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fade-in {
@@ -60,50 +61,14 @@ html {
 }
 
 @keyframes glow-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.05); }
+  0%, 100% { opacity: 0.25; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.05); }
 }
 
-@keyframes slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-up {
-  animation: fade-up 0.6s ease-out forwards;
-}
-
-.animate-fade-in {
-  animation: fade-in 0.8s ease-out forwards;
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
-.animate-slide-up {
-  opacity: 0;
-}
-
-.animate-slide-up.visible {
-  animation: slide-up 0.5s ease-out forwards;
-}
-
-.animate-slide-up.delay-1 { animation-delay: 0.1s; }
-.animate-slide-up.delay-2 { animation-delay: 0.2s; }
-.animate-slide-up.delay-3 { animation-delay: 0.3s; }
-.animate-slide-up.delay-4 { animation-delay: 0.4s; }
-.animate-slide-up.delay-5 { animation-delay: 0.5s; }
+.animate-fade-up { animation: fade-up 0.6s ease-out forwards; }
+.animate-fade-in { animation: fade-in 0.8s ease-out forwards; }
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
 
 .marquee-track {
   display: flex;
@@ -112,6 +77,4 @@ html {
   width: fit-content;
 }
 
-.marquee-track:hover {
-  animation-play-state: paused;
-}
+.marquee-track:hover { animation-play-state: paused; }
