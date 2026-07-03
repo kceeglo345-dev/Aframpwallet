@@ -55,12 +55,8 @@ function App() {
           <Route
             path="/features"
             element={
-              <div className="min-h-screen bg-gray-950">
-                <Navbar />
-                <main>
-                  <Features />
-                </main>
-                <Footer />
+              <div className="min-h-screen bg-[#102216]">
+                <Features />
               </div>
             }
           />
