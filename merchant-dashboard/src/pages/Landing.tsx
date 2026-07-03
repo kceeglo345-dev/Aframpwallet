@@ -1,141 +1,130 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import aframpLogo from '../assets/3_3.png'
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.15 } },
-}
+const faqs = [
+  {
+    q: 'How do I get started with Aframp?',
+    a: 'Create your merchant identity using the onboarding flow. We generate a cryptographic seed that derives your proving key, verification key, and merchant ID. No trusted setup ceremony required — everything is deterministic from your seed.',
+  },
+  {
+    q: 'What tokens does Aframp support?',
+    a: 'Aframp currently supports USDC and XLM on Stellar Testnet. Mainnet support for additional Stellar assets is on the roadmap. The ZK circuit works with any numeric payment amount.',
+  },
+  {
+    q: 'How do ZK proofs protect my payments?',
+    a: 'Groth16 proofs on BN254 encode the payment amount, customer identity, and merchant ID into a cryptographic commitment. The Stellar contract only sees the proof and a nullifier — never the underlying data. Only your viewing key can decrypt the actual amounts.',
+  },
+  {
+    q: 'What are the fees for using Aframp?',
+    a: 'Aframp charges 0.1% per verified payment. Stellar network fees are near-zero (~0.00001 XLM per transaction). ZK proof generation is free and runs client-side in your browser.',
+  },
+  {
+    q: 'How do I track my private payments?',
+    a: 'All payments are encrypted with your AES-256-GCM viewing key and stored off-chain. Your merchant dashboard decrypts them in real-time. You can also generate audit-specific viewing keys for regulators without exposing your master secret.',
+  },
+  {
+    q: 'How does the Payment Stream work?',
+    a: 'The Payment Stream demo generates a Groth16 ZK proof entirely in your browser using a compiled WASM module. Your customer secret is generated via crypto.getRandomValues() and never leaves the device. The proof is then relayed to the Soroban contract for on-chain verification.',
+  },
+  {
+    q: 'Can I convert my crypto to fiat?',
+    a: 'Yes — the Offramp section lets you export compliance reports and viewing keys to facilitate fiat conversion with compliant partners across major networks including Stellar.',
+  },
+]
 
 const features = [
   {
+    title: 'ZK Distributions',
+    desc: 'Send private payments to multiple recipients in one transaction. Zero-knowledge proofs hide amounts while the contract verifies validity. Equal or weighted splits with nullifier-based double-spend protection.',
+    cta: 'Create Distribution',
+    href: '/distribution',
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
       </svg>
     ),
-    title: 'Zero-Knowledge Proofs',
-    desc: 'Every payment is verified using Groth16 ZK proofs on Stellar. Amounts, customer IDs, and merchant relationships stay cryptographically hidden.',
-    cta: 'How it works',
-    href: '/developers',
   },
   {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0021 18V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v12a2.25 2.25 0 002.25 2.25z" />
-      </svg>
-    ),
-    title: 'Client-Side WASM Prover',
-    desc: 'ZK proofs are generated entirely in the browser via WebAssembly. Your merchant secret never leaves the device — no server relay, no trusted third party.',
-    cta: 'Try the demo',
+    title: 'Payment Stream',
+    desc: 'Automate continuous private crypto payouts, subscriptions, and salaries. Set up once, run forever. All amounts stay hidden on-chain via Groth16 proofs generated client-side.',
+    cta: 'Create Stream',
     href: '/pay',
-  },
-  {
     icon: (
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
       </svg>
     ),
-    title: 'Viewing Keys',
-    desc: 'Generate cryptographic viewing keys to selectively share transaction details with auditors, accountants, or regulators — without compromising your master secret.',
-    cta: 'Learn more',
-    href: '/compliance',
   },
+  {
+    title: 'Fiat Offramp',
+    desc: 'Convert private crypto payments to fiat securely. Export compliance reports with selective disclosure using viewing keys — share only what regulators need, nothing more.',
+    cta: 'Cash Out Now',
+    href: '/compliance',
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'Privacy Crowdfunding',
+    desc: 'Run fundraising campaigns where donor amounts stay private. Connect with contributors who value discretion. Cryptographic commitments prove total funding without revealing individual amounts.',
+    cta: 'Start Campaign',
+    href: '/dashboard',
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+      </svg>
+    ),
+  },
+  {
+    title: 'AirDrops',
+    desc: 'Distribute tokens privately to your community. Our ZK-optimized airdrop tool supports customizable distribution rules and automated eligibility verification — efficient and confidential.',
+    cta: 'Start Airdrop',
+    href: '/distribution',
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+      </svg>
+    ),
+  },
+]
+
+const partnerBadges = [
+  'Stellar', 'Soroban', 'Groth16', 'BN254', 'WASM', 'React', 'Rust', 'Tailwind',
 ]
 
 const pillars = [
   {
     icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-      </svg>
-    ),
-    title: 'Private by Default',
-    desc: 'Payment amounts and customer data are encrypted end-to-end. Only the merchant can decrypt using their secret viewing key.',
-  },
-  {
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-    title: 'Fully Auditable',
-    desc: 'Optional viewing keys let you share encrypted transaction data with auditors and regulators while maintaining overall privacy guarantees.',
-  },
-  {
-    icon: (
-      <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
       </svg>
     ),
-    title: 'Built on Stellar',
-    desc: 'Leverages Stellar for fast (3-5s), low-cost settlement. No gas fees, no congestion — just instant, private transactions.',
+    label: 'Efficient',
+    desc: 'Streamline your payment workflows, reduce overhead, and allocate more resources to growth — not transfers.',
+  },
+  {
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+      </svg>
+    ),
+    label: 'Transparent & Trustworthy',
+    desc: 'On-chain ZK proofs and nullifier audit trails keep your payments verifiable without exposing sensitive data.',
+  },
+  {
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 16.875h3.375m0 0h3.375m-3.375 0V13.5m0 3.375v3.375M6 10.5h2.25a2.25 2.25 0 002.25-2.25V6a2.25 2.25 0 00-2.25-2.25H6A2.25 2.25 0 003.75 6v2.25A2.25 2.25 0 006 10.5zm0 9.75h2.25A2.25 2.25 0 0010.5 18v-2.25a2.25 2.25 0 00-2.25-2.25H6a2.25 2.25 0 00-2.25 2.25V18A2.25 2.25 0 006 20.25zm9.75-9.75H18a2.25 2.25 0 002.25-2.25V6A2.25 2.25 0 0018 3.75h-2.25A2.25 2.25 0 0013.5 6v2.25a2.25 2.25 0 002.25 2.25z" />
+      </svg>
+    ),
+    label: 'No Limits',
+    desc: 'Unlock limitless private payment potential with Aframp\'s scalable ZK architecture on Stellar\'s fast, low-cost network.',
   },
 ]
-
-const faqs = [
-  {
-    q: 'How does Aframp protect payment privacy?',
-    a: 'Aframp uses Groth16 zero-knowledge proofs on the BN254 curve. When a customer makes a payment, their client generates a ZK proof that encodes the payment amount, merchant ID, and a unique nullifier — all without revealing any of these values. The proof is verified on-chain by a Soroban smart contract, and only the merchant can decrypt the actual payment data using their secret viewing key.',
-  },
-  {
-    q: 'What is a viewing key and how do I use it?',
-    a: 'A viewing key is a cryptographic key derived from your merchant secret that can selectively decrypt payment data. You can generate multiple viewing keys to share with auditors, accountants, or compliance officers — each key provides access to specific subsets of transaction data without exposing your master merchant secret.',
-  },
-  {
-    q: 'Is Aframp production ready?',
-    a: 'Aframp is currently deployed on Stellar Testnet for testing and integration. The protocol uses standard cryptographic primitives (Groth16 on BN254) that are widely used in production privacy systems. We recommend thorough testing before mainnet deployment.',
-  },
-  {
-    q: 'How do I integrate Aframp with my POS system?',
-    a: 'Integration is straightforward. Deploy the Soroban verifier contract, generate your merchant keys, and add the Aframp SDK to your POS client. Your customers scan a QR code on their phone, enter the amount, and the payment proof is generated in-browser via WASM — no server-side changes required.',
-  },
-  {
-    q: 'What makes Aframp different from other privacy solutions?',
-    a: 'Unlike general-purpose privacy protocols, Aframp is purpose-built for merchant payments. It operates client-side (no relayer), leverages Stellar\'s fast settlement (3-5 seconds), and includes compliance features like viewing keys and audit-ready reporting out of the box.',
-  },
-]
-
-const trustBadges = [
-  { name: 'Stellar' },
-  { name: 'Soroban' },
-  { name: 'WebAssembly' },
-  { name: 'Groth16' },
-  { name: 'BN254' },
-  { name: 'Rust' },
-  { name: 'React' },
-  { name: 'Tailwind CSS' },
-]
-
-function Section({ children, className, id }: { children: React.ReactNode; className?: string; id?: string }) {
-  return (
-    <motion.section
-      id={id}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: '-60px' }}
-      variants={containerVariants}
-      className={className}
-    >
-      {children}
-    </motion.section>
-  )
-}
-
-function FadeUp({ children, className, delay = 0 }: { children: React.ReactNode; className?: string; delay?: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      transition={{ duration: 0.5, delay, ease: 'easeOut' }}
-      className={className}
-    >
-      {children}
-    </motion.div>
-  )
-}
 
 export default function Landing() {
   const [scrolled, setScrolled] = useState(false)
@@ -148,375 +137,370 @@ export default function Landing() {
   }, [])
 
   return (
-    <div className="bg-[#0a0a0f] text-white min-h-screen overflow-x-hidden">
-      {/* ── Fixed Navbar ── */}
-      <motion.nav
-        initial={{ y: -80 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled ? 'bg-gray-950/80 backdrop-blur-xl border-b border-gray-800/50' : 'bg-transparent'
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-              </div>
-              <span className="text-lg font-bold text-white">Aframp</span>
-            </Link>
+    <div className="bg-[#0a0a0f] text-white min-h-screen overflow-x-hidden font-sans">
+      {/* ── Navbar ── */}
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#0a0a0f]/90 backdrop-blur-xl border-b border-white/5' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2.5">
+            <img src={aframpLogo} alt="Aframp" className="h-8 w-auto object-contain" />
+          </Link>
 
-            <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm text-gray-400 hover:text-white transition-colors">Features</a>
-              <Link to="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">Console</Link>
-              <Link to="/developers" className="text-sm text-gray-400 hover:text-white transition-colors">Developers</Link>
-              <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">About</Link>
-            </div>
-
-            <Link
-              to="/dashboard"
-              className="hidden sm:inline-flex items-center px-4 py-2 rounded-lg bg-green-500 text-white text-sm font-medium hover:bg-green-400 transition-all hover:shadow-lg hover:shadow-green-500/25"
-            >
-              Launch Console
-            </Link>
+          <div className="hidden md:flex items-center gap-8">
+            <a href="#features" className="text-sm text-gray-400 hover:text-white transition-colors">Features</a>
+            <Link to="/dashboard" className="text-sm text-gray-400 hover:text-white transition-colors">Console</Link>
+            <Link to="/developers" className="text-sm text-gray-400 hover:text-white transition-colors">Developers</Link>
+            <Link to="/about" className="text-sm text-gray-400 hover:text-white transition-colors">About</Link>
           </div>
+
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-400 transition-all"
+          >
+            Launch App
+          </Link>
         </div>
-      </motion.nav>
+      </nav>
 
       {/* ── Hero ── */}
-      <section className="relative pt-36 pb-28 md:pt-44 md:pb-36 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-green-500/5 via-transparent to-transparent" />
-        <motion.div
-          animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[900px] h-[700px] bg-green-500/10 rounded-full blur-3xl"
-        />
+      <section className="relative pt-40 pb-24 text-center overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-green-500/8 rounded-full blur-[120px]" />
+        </div>
 
-        <motion.div
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          className="absolute top-1/3 right-[10%] w-24 h-24 rounded-full bg-green-500/5 blur-2xl hidden lg:block"
-        />
-        <motion.div
-          animate={{ y: [0, -12, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="absolute bottom-1/4 left-[8%] w-32 h-32 rounded-full bg-green-400/5 blur-3xl hidden lg:block"
-        />
+        <div className="relative max-w-5xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, ease: 'easeOut' }}
+          >
+            <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.08] tracking-tight">
+              Private Payments on
+              <br />
+              <span className="text-green-400">Stellar</span>
+            </h1>
+            <p className="mt-6 text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              Your one stop{' '}
+              <span className="text-white font-medium">zero-knowledge privacy</span>{' '}
+              solution for{' '}
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-green-500/15 border border-green-500/25 rounded-full text-green-400 text-sm font-medium">
+                Merchants
+              </span>
+            </p>
+          </motion.div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto text-center">
+          {/* Hero visual — abstract ZK network */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: 'easeOut' }}
+            className="mt-14 mx-auto max-w-2xl relative"
+          >
+            <div className="relative bg-gradient-to-b from-gray-900/80 to-gray-950 border border-white/8 rounded-2xl p-8 overflow-hidden">
+              {/* Animated grid */}
+              <svg className="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+                    <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#10b981" strokeWidth="0.5"/>
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)" />
+              </svg>
+
+              <div className="relative flex items-center justify-between gap-6">
+                {/* Customer */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-green-500/15 border border-green-500/25 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-500 font-medium">Customer</span>
+                  <div className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">WASM Prover</div>
+                </div>
+
+                {/* Arrow + proof */}
+                <div className="flex-1 flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2 w-full">
+                    <div className="flex-1 h-px bg-gradient-to-r from-green-500/50 to-transparent" />
+                    <motion.div
+                      animate={{ x: [0, 8, 0] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="text-xs font-mono text-green-400 bg-gray-900 px-2 py-1 rounded border border-green-500/20 whitespace-nowrap"
+                    >
+                      ZK Proof
+                    </motion.div>
+                    <div className="flex-1 h-px bg-gradient-to-l from-green-500/50 to-transparent" />
+                  </div>
+                  <span className="text-xs text-gray-600">amount hidden on-chain</span>
+                </div>
+
+                {/* Contract */}
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-14 h-14 rounded-2xl bg-green-500/15 border border-green-500/25 flex items-center justify-center">
+                    <svg className="w-7 h-7 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs text-gray-500 font-medium">Soroban</span>
+                  <div className="text-xs text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">BN254 Verify</div>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Proof Time', value: '~2.1s' },
+                  { label: 'Settlement', value: '3-5s' },
+                  { label: 'Privacy', value: '100%' },
+                ].map((stat) => (
+                  <div key={stat.label} className="bg-gray-900/60 rounded-xl p-3 text-center border border-white/5">
+                    <p className="text-lg font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Partner marquee */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-16 overflow-hidden"
+          >
+            <div className="relative">
+              <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#0a0a0f] to-transparent z-10 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#0a0a0f] to-transparent z-10 pointer-events-none" />
+              <div className="flex marquee-track gap-12 py-1">
+                {[...partnerBadges, ...partnerBadges].map((name, i) => (
+                  <span key={i} className="text-sm text-gray-600 font-medium whitespace-nowrap hover:text-gray-400 transition-colors cursor-default">
+                    {name}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Features Grid ── */}
+      <section id="features" className="py-24 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="mb-12"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              Privacy-First Payments, <span className="text-green-400">Made Easy</span>
+            </h2>
+            <p className="mt-3 text-gray-400 max-w-xl">
+              Aframp simplifies ZK-native payments: private distributions, payment streaming, fiat offramping, and airdrop payouts — all cryptographically hidden and gas-efficient.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.07 }}
+                className="group relative bg-[#111118] border border-white/8 rounded-2xl p-6 hover:border-green-500/30 transition-all duration-300"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 group-hover:bg-green-500/20 transition-colors">
+                    {f.icon}
+                  </div>
+                  <svg className="w-4 h-4 text-gray-700 group-hover:text-gray-500 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
+                </div>
+                <h3 className="text-base font-semibold text-white mb-2">{f.title}</h3>
+                <p className="text-sm text-gray-400 leading-relaxed mb-5">{f.desc}</p>
+                <Link
+                  to={f.href}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-green-400 hover:text-green-300 transition-colors"
+                >
+                  {f.cta}
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Send Payments Section ── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
+              initial={{ opacity: 0, x: -24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.55 }}
             >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium mb-8">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                Now Live on Stellar Testnet
+              <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
+                Send payments in<br />
+                <span className="text-green-400">crypto currencies</span>
+              </h2>
+              <p className="mt-4 text-gray-400 leading-relaxed">
+                Unlock the full potential of zero-knowledge payments with Aframp's efficient, private, and cryptographically-verified solutions.
+              </p>
+
+              <div className="mt-8 space-y-5">
+                {pillars.map((p) => (
+                  <div key={p.label} className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 flex-shrink-0 mt-0.5">
+                      {p.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-green-400">{p.label}</p>
+                      <p className="text-sm text-gray-400 mt-1 leading-relaxed">{p.desc}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
 
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight tracking-tight"
-            >
-              <span className="text-white">Zero-Knowledge Privacy</span>
-              <br />
-              <span className="bg-gradient-to-r from-green-300 via-green-400 to-green-500 bg-clip-text text-transparent">
-                for Stellar Payments
-              </span>
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.35 }}
-              className="mt-6 text-lg sm:text-xl text-gray-400 leading-relaxed max-w-2xl mx-auto"
-            >
-              Aframp is a zero-knowledge privacy layer for merchants on Stellar. 
-              Hide payment amounts, protect customer identities, and keep business 
-              relationships confidential — while maintaining verifiability and compliance.
-            </motion.p>
-
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
+              initial={{ opacity: 0, x: 24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.55 }}
+              className="relative"
             >
-              <Link
-                to="/dashboard"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500 text-white font-medium hover:bg-green-400 transition-all hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
-              >
-                Launch Console
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
-              </Link>
-              <a
-                href="https://github.com/kelly-musk/Aframpwallet"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-all hover:-translate-y-0.5"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
-                View on GitHub
-              </a>
-            </motion.div>
-
-            {/* Marquee Trust Badges */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.65 }}
-              className="mt-20 overflow-hidden"
-            >
-              <p className="text-xs text-gray-600 uppercase tracking-widest mb-6">Built with</p>
-              <div className="relative">
-                <div className="flex marquee-track">
-                  {[...trustBadges, ...trustBadges].map((badge, i) => (
-                    <span
-                      key={i}
-                      className="text-sm font-medium text-gray-600 whitespace-nowrap"
-                    >
-                      {badge.name}
-                    </span>
-                  ))}
+              {/* Payment flow card */}
+              <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="text-sm font-semibold text-white">Private Payment Flow</span>
+                  <span className="text-xs text-green-400 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20">Live Demo</span>
                 </div>
+
+                {[
+                  { step: '01', label: 'Generate customer secret', detail: 'crypto.getRandomValues()', status: 'done' },
+                  { step: '02', label: 'Compute ZK proof in browser', detail: 'Groth16 · BN254 · WASM', status: 'done' },
+                  { step: '03', label: 'Submit proof to Soroban', detail: 'nullifier + commitment', status: 'active' },
+                  { step: '04', label: 'Contract verifies pairing', detail: 'e(A,B) = e(α,β)...', status: 'pending' },
+                ].map((item) => (
+                  <div key={item.step} className={`flex items-start gap-4 p-3 rounded-xl mb-2 ${item.status === 'active' ? 'bg-green-500/8 border border-green-500/20' : ''}`}>
+                    <span className={`text-xs font-mono font-bold pt-0.5 ${item.status === 'done' ? 'text-green-400' : item.status === 'active' ? 'text-green-300' : 'text-gray-600'}`}>
+                      {item.status === 'done' ? '✓' : item.step}
+                    </span>
+                    <div>
+                      <p className={`text-sm font-medium ${item.status === 'pending' ? 'text-gray-600' : 'text-white'}`}>{item.label}</p>
+                      <p className="text-xs text-gray-500 font-mono mt-0.5">{item.detail}</p>
+                    </div>
+                  </div>
+                ))}
+
+                <Link
+                  to="/pay"
+                  className="mt-4 w-full flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-400 transition-colors rounded-xl text-sm font-semibold text-white"
+                >
+                  Try Payment Demo
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                </Link>
+              </div>
+
+              {/* Floating badge */}
+              <div className="absolute -top-4 -right-4 bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-green-500/30">
+                Client-Side ZK
               </div>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <Section id="features" className="py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center max-w-2xl mx-auto">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">
-                Everything you need for private payments
-              </h2>
-              <p className="mt-4 text-gray-400">
-                A complete privacy stack for merchants — from in-browser proof generation to compliance reporting.
-              </p>
-            </div>
-          </FadeUp>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.15 } } }}
-            className="mt-16 grid md:grid-cols-3 gap-6"
-          >
-            {features.map((f) => (
-              <motion.div
-                key={f.title}
-                variants={{
-                  hidden: { opacity: 0, y: 24 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
-                }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-                className="group relative p-8 rounded-2xl bg-gray-900/50 border border-gray-800 hover:border-green-500/30 transition-colors duration-500"
-              >
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  className="w-12 h-12 rounded-xl bg-green-500/10 text-green-400 flex items-center justify-center mb-5 group-hover:bg-green-500/20 transition-colors duration-300"
-                >
-                  {f.icon}
-                </motion.div>
-                <h3 className="text-lg font-semibold text-white mb-3 group-hover:text-green-300 transition-colors">{f.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed mb-6">{f.desc}</p>
-                <Link
-                  to={f.href}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-green-400 hover:text-green-300 transition-colors group/link"
-                >
-                  {f.cta}
-                  <motion.svg
-                    whileHover={{ x: 3 }}
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </motion.svg>
-                </Link>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </Section>
-
-      {/* ── Value Pillars ── */}
-      <Section className="py-24 border-t border-gray-800/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.15 } } }}
-            className="grid md:grid-cols-3 gap-12"
-          >
-            {pillars.map((p) => (
-              <motion.div
-                key={p.title}
-                variants={{
-                  hidden: { opacity: 0, y: 20 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-                }}
-                className="text-center"
-              >
-                <motion.div
-                  whileHover={{ scale: 1.12 }}
-                  className="w-16 h-16 rounded-2xl bg-green-500/10 text-green-400 flex items-center justify-center mx-auto mb-5 transition-colors duration-300 hover:bg-green-500/20"
-                >
-                  {p.icon}
-                </motion.div>
-                <h3 className="text-lg font-semibold text-white mb-3">{p.title}</h3>
-                <p className="text-sm text-gray-400 leading-relaxed max-w-xs mx-auto">{p.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </Section>
-
       {/* ── FAQ ── */}
-      <Section className="py-24 border-t border-gray-800/50">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white">Frequently Asked Questions</h2>
-            </div>
-          </FadeUp>
-
+      <section className="py-24 border-t border-white/5">
+        <div className="max-w-3xl mx-auto px-6">
           <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: '-40px' }}
-            variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
-            className="space-y-3"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
           >
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">Frequently Asked Questions</h2>
+            <p className="mt-3 text-gray-400">Get the answers you need to navigate our platform with confidence.</p>
+
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              {['Getting Started', 'Security & Privacy', 'Transactions', 'Compliance'].map((tag) => (
+                <span key={tag} className="px-3 py-1.5 rounded-full border border-white/10 text-xs text-gray-400 hover:border-green-500/30 hover:text-green-400 transition-colors cursor-pointer">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </motion.div>
+
+          <div className="space-y-2">
             {faqs.map((faq, i) => (
               <motion.div
                 key={i}
-                variants={{
-                  hidden: { opacity: 0, y: 16 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
-                }}
-                className="rounded-xl border border-gray-800 overflow-hidden transition-colors hover:border-gray-700"
+                initial={{ opacity: 0, y: 12 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.04 }}
+                className="bg-[#111118] border border-white/8 rounded-xl overflow-hidden"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between px-6 py-4 text-left text-sm font-medium text-white hover:bg-gray-800/50 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between px-5 py-4 text-left text-sm font-medium text-white hover:bg-white/3 transition-colors cursor-pointer"
                 >
-                  {faq.q}
+                  <span>{faq.q}</span>
                   <motion.svg
                     animate={{ rotate: openFaq === i ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`w-4 h-4 ${openFaq === i ? 'text-green-400' : 'text-gray-500'}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="2"
-                    stroke="currentColor"
+                    transition={{ duration: 0.25 }}
+                    className={`w-4 h-4 flex-shrink-0 ml-4 ${openFaq === i ? 'text-green-400' : 'text-gray-600'}`}
+                    fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                   </motion.svg>
                 </button>
-                <motion.div
-                  initial={false}
-                  animate={{
-                    height: openFaq === i ? 'auto' : 0,
-                    opacity: openFaq === i ? 1 : 0,
-                  }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-6 pb-4 text-sm text-gray-400 leading-relaxed">
-                    {faq.a}
-                  </div>
-                </motion.div>
+                <AnimatePresence>
+                  {openFaq === i && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-4 text-sm text-gray-400 leading-relaxed border-t border-white/5">
+                        <div className="pt-3">{faq.a}</div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
-      </Section>
-
-      {/* ── CTA ── */}
-      <Section className="py-24 border-t border-gray-800/50 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-500/3 via-transparent to-green-500/3" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <FadeUp>
-            <div className="max-w-2xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight">
-                Ready for private payments on Stellar?
-              </h2>
-              <p className="mt-4 text-gray-400">
-                Launch your merchant console, deploy the privacy contract, and start accepting private payments in minutes.
-              </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link
-                  to="/dashboard"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-500 text-white font-medium hover:bg-green-400 transition-all hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
-                >
-                  Get Started Free
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                  </svg>
-                </Link>
-                <Link
-                  to="/developers"
-                  className="inline-flex items-center px-6 py-3 rounded-xl border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 transition-all hover:-translate-y-0.5"
-                >
-                  Read Documentation
-                </Link>
-              </div>
-            </div>
-          </FadeUp>
-        </div>
-      </Section>
+      </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-gray-800/50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <footer className="border-t border-white/5 py-12">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                  <path d="M2 17l10 5 10-5" />
-                  <path d="M2 12l10 5 10-5" />
-                </svg>
-              </div>
-              <span className="text-sm font-semibold text-white">Aframp</span>
+            <div className="flex items-center gap-3">
+              <img src={aframpLogo} alt="Aframp" className="h-7 w-auto object-contain" />
+              <span className="text-xs text-gray-600 ml-2">CONTACT US</span>
+              <a href="mailto:admin@aframp.finance" className="text-xs text-gray-500 hover:text-white transition-colors">admin@aframp.finance</a>
             </div>
-            <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} Aframp. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6">
-              <a href="https://github.com/kelly-musk/Aframpwallet" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-white transition-colors">
-                <span className="sr-only">GitHub</span>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
-                </svg>
-              </a>
-              <a href="#" className="text-gray-500 hover:text-white transition-colors">
-                <span className="sr-only">Twitter</span>
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                </svg>
-              </a>
+            <p className="text-xs text-gray-600">&copy; {new Date().getFullYear()} — Copyright</p>
+            <div className="flex items-center gap-5">
+              <a href="https://github.com/kelly-musk/Aframpwallet" target="_blank" rel="noopener noreferrer" className="text-xs text-gray-500 hover:text-white transition-colors">GitHub</a>
+              <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">X</a>
+              <a href="#" className="text-xs text-gray-500 hover:text-white transition-colors">Telegram</a>
             </div>
           </div>
         </div>

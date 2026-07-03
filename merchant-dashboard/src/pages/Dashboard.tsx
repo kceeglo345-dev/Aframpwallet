@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { MerchantAPI } from '../services/api';
+import { Link } from 'react-router-dom';
 
 export default function Dashboard() {
   const { data: statsData } = useQuery({
@@ -8,114 +9,160 @@ export default function Dashboard() {
   });
 
   const stats = [
-    { label: 'Total Revenue', value: statsData?.balance || '$12,432.00', icon: '💰' },
-    { label: 'Transactions', value: String(statsData?.transaction_count ?? '847'), icon: '📊' },
-    { label: 'Active Customers', value: '128', icon: '👥' },
-    { label: 'Avg. Transaction', value: statsData?.average_transaction || '$14.68', icon: '📈' },
+    { label: 'Total Volume', value: statsData?.total_volume_usd || '$12,432.00', change: '+12.5%', positive: true, icon: '💰' },
+    { label: 'Transactions', value: String(statsData?.transaction_count ?? '847'), change: '+8.2%', positive: true, icon: '📊' },
+    { label: 'Active Customers', value: '128', change: '+3.1%', positive: true, icon: '👥' },
+    { label: 'Avg. Transaction', value: statsData?.average_transaction || '$14.68', change: '-2.4%', positive: false, icon: '📈' },
+  ];
+
+  const quickActions = [
+    { label: 'New Distribution', desc: 'Send tokens to multiple recipients', href: '/distribution', icon: '📤' },
+    { label: 'Create Stream', desc: 'Set up continuous payment', href: '/pay', icon: '⚡' },
+    { label: 'Offramp to Fiat', desc: 'Convert crypto to local currency', href: '/compliance', icon: '🏦' },
+    { label: 'View History', desc: 'Check transaction records', href: '/transactions', icon: '📋' },
+  ];
+
+  const recentActivity = [
+    { action: 'Payment received', amount: '$42.00', time: '2 min ago', status: 'confirmed', customer: '0x4f...8a2c' },
+    { action: 'Payment received', amount: '$156.00', time: '15 min ago', status: 'confirmed', customer: '0x9b...3e1d' },
+    { action: 'Viewing key generated', amount: '', time: '1 hour ago', status: 'info', customer: '' },
+    { action: 'Compliance report exported', amount: '', time: '3 hours ago', status: 'info', customer: '' },
+    { action: 'Payment received', amount: '$89.50', time: '5 hours ago', status: 'confirmed', customer: '0x2c...7f4a' },
+    { action: 'Payment received', amount: '$234.00', time: '8 hours ago', status: 'confirmed', customer: '0x8d...1b9e' },
   ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="text-sm text-gray-400 mt-1">Overview of your merchant activity</p>
-        </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-green-400 text-xs font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
-          System Active
-        </div>
-      </div>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-gray-900/50 border border-gray-800 rounded-xl p-5 hover:border-green-500/20 transition-colors"
+            className="bg-[#111118] border border-white/8 rounded-2xl p-5 hover:border-green-500/20 transition-colors"
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-400">{stat.label}</span>
-              <span className="text-lg">{stat.icon}</span>
+              <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{stat.label}</span>
+              <span className="text-base">{stat.icon}</span>
             </div>
             <p className="text-2xl font-bold text-white">{stat.value}</p>
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className={`text-xs font-medium ${stat.positive ? 'text-green-400' : 'text-red-400'}`}>
+                {stat.positive ? '↑' : '↓'} {stat.change}
+              </span>
+              <span className="text-xs text-gray-600">vs last week</span>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <a
-            href="/transactions"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:border-green-500/30 hover:bg-gray-800 transition-all text-sm text-gray-300 hover:text-white"
-          >
-            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            View Transactions
-          </a>
-          <a
-            href="/compliance"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:border-green-500/30 hover:bg-gray-800 transition-all text-sm text-gray-300 hover:text-white"
-          >
-            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
-            </svg>
-            Compliance Report
-          </a>
-          <a
-            href="/distribution"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:border-green-500/30 hover:bg-gray-800 transition-all text-sm text-gray-300 hover:text-white"
-          >
-            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5m.75-9l3-3 2.148 2.148A12.061 12.061 0 0116.5 7.605" />
-            </svg>
-            Distribution
-          </a>
-          <a
-            href="/pay"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gray-800/50 border border-gray-700/50 hover:border-green-500/30 hover:bg-gray-800 transition-all text-sm text-gray-300 hover:text-white"
-          >
-            <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
-            </svg>
-            Payment Demo
-          </a>
+      <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
+        <h2 className="text-base font-semibold text-white mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {quickActions.map((action) => (
+            <Link
+              key={action.label}
+              to={action.href}
+              className="group flex flex-col gap-2 p-4 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-green-500/25 hover:bg-green-500/5 transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xl">{action.icon}</span>
+                <svg className="w-4 h-4 text-gray-700 group-hover:text-green-400 transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-white">{action.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{action.desc}</p>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-white mb-4">Recent Activity</h2>
-        <div className="space-y-3">
-          {[
-            { action: 'Payment received', amount: '$42.00', time: '2 min ago', status: 'confirmed' },
-            { action: 'Payment received', amount: '$156.00', time: '15 min ago', status: 'confirmed' },
-            { action: 'Viewing key generated', amount: '', time: '1 hour ago', status: 'info' },
-            { action: 'Compliance report exported', amount: '', time: '3 hours ago', status: 'info' },
-            { action: 'Payment received', amount: '$89.50', time: '5 hours ago', status: 'confirmed' },
-          ].map((item, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-800/30 border border-gray-800/50"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-2 h-2 rounded-full ${
-                  item.status === 'confirmed' ? 'bg-green-400' : 'bg-gray-500'
-                }`} />
-                <span className="text-sm text-gray-300">{item.action}</span>
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Recent Activity */}
+        <div className="lg:col-span-2 bg-[#111118] border border-white/8 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-semibold text-white">Recent Activity</h2>
+            <Link to="/transactions" className="text-xs text-green-400 hover:text-green-300 font-medium">View all →</Link>
+          </div>
+          <div className="space-y-2">
+            {recentActivity.map((item, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-white/10 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-2 h-2 rounded-full ${item.status === 'confirmed' ? 'bg-green-400' : 'bg-gray-600'}`} />
+                  <div>
+                    <span className="text-sm text-gray-300">{item.action}</span>
+                    {item.customer && (
+                      <span className="text-xs text-gray-600 ml-2 font-mono">{item.customer}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  {item.amount && (
+                    <span className="text-sm font-semibold text-white">{item.amount}</span>
+                  )}
+                  <span className="text-xs text-gray-600">{item.time}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                {item.amount && (
-                  <span className="text-sm font-medium text-white">{item.amount}</span>
-                )}
-                <span className="text-xs text-gray-500">{item.time}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Privacy Status */}
+        <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
+          <h2 className="text-base font-semibold text-white mb-5">Privacy Status</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-green-500/8 border border-green-500/15">
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+                <span className="text-sm text-green-400 font-medium">ZK Proofs Active</span>
+              </div>
+              <span className="text-xs text-green-400">100%</span>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { label: 'Proofs Generated', value: '847', total: '1000' },
+                { label: 'Nullifiers Used', value: '847', total: '847' },
+                { label: 'Viewing Keys', value: '3', total: '5' },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs text-gray-500">{item.label}</span>
+                    <span className="text-xs text-gray-400 font-mono">{item.value}/{item.total}</span>
+                  </div>
+                  <div className="h-1.5 bg-[#0d0d14] rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full"
+                      style={{ width: `${(parseInt(item.value) / parseInt(item.total)) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="pt-3 border-t border-white/5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Contract</span>
+                <span className="text-gray-400 font-mono">CA23...MP2Y</span>
+              </div>
+              <div className="flex items-center justify-between text-xs mt-2">
+                <span className="text-gray-500">Network</span>
+                <span className="text-gray-400">Stellar Testnet</span>
+              </div>
+              <div className="flex items-center justify-between text-xs mt-2">
+                <span className="text-gray-500">Settlement</span>
+                <span className="text-green-400">3-5s avg</span>
               </div>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </div>
