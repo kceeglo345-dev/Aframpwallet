@@ -9,11 +9,14 @@
 </p>
 
 <p align="center">
+  <a href="https://aframpwallet.vercel.app/"><img src="https://img.shields.io/badge/Live-Vercel-10b981" /></a>
   <a href="https://github.com/kelly-musk/Aframpwallet"><img src="https://img.shields.io/badge/Stellar-Testnet-7B1FA2" /></a>
-  <a href="https://github.com/kelly-musk/Aframpwallet"><img src="https://img.shields.io/badge/ZK-Groth16_Bn254-3B71E3" /></a>
+  <a href="https://github.com/kelly-musk/Aframpwallet"><img src="https://img.shields.io/badge/ZK-Groth16_Bn254-10b981" /></a>
   <a href="https://github.com/kelly-musk/Aframpwallet"><img src="https://img.shields.io/badge/WASM-Client_Side-FF6B35" /></a>
   <a href="https://github.com/kelly-musk/Aframpwallet"><img src="https://img.shields.io/badge/License-MIT-green" /></a>
 </p>
+
+> **Live Demo**: [https://aframpwallet.vercel.app/](https://aframpwallet.vercel.app/)
 
 ---
 
@@ -40,6 +43,26 @@ Proofs are generated **client-side via WASM** — the customer's secret never le
 | Customer data exposed | Merchant controls all data via viewing keys |
 | No regulatory compliance path | Selective disclosure for auditors |
 
+## Frontend Pages
+
+The merchant dashboard is deployed at **[aframpwallet.vercel.app](https://aframpwallet.vercel.app/)** with these pages:
+
+| Page | Route | Description |
+|---|---|---|
+| **Landing** | `/` | Fundable.finance-style hero with gradient text, scroll animations, marquee trust badges, FAQ accordion, value pillars |
+| **Dashboard** | `/dashboard` | Analytics overview with stats grid, recent activity feed, quick action links |
+| **Distribution** | `/distribution` | Token/report distribution management |
+| **History** | `/transactions` | Full transaction history with status tracking |
+| **Offramp** | `/compliance` | Compliance reports, CSV export, viewing key generation |
+| **Payment Stream** | `/pay` | Client-side ZK proof generation demo using in-browser WASM |
+| **Settings** | `/settings` | Merchant configuration, QR code for customer wallet |
+
+The UI was redesigned to match the dark, polished aesthetic of **Fundable.finance**:
+- **Green primary** palette (`#10b981`) replacing navy/gold
+- Dark theme throughout (`#0a0a0f` backgrounds)
+- **framer-motion** animations: staggered scroll reveals, card hover effects, FAQ expand, floating decorative elements
+- Server-side rendered views via **Tailwind CSS v4**
+
 ## Architecture
 
 ```
@@ -52,9 +75,9 @@ aframp/
 ├── merchant-api/           # Axum REST API server (port 3000)
 │   └── src/main.rs         # Merchant CRUD, proof relay, dashboard stats
 ├── pos-client/             # POS terminal TUI (dialoguer + ureq)
-├── merchant-dashboard/     # React 19 + Vite + Tailwind merchant console
+├── merchant-dashboard/     # React 19 + Vite + Tailwind + framer-motion
 │   └── src/
-│       ├── pages/          # Dashboard, Transactions, Compliance, Pay Demo
+│       ├── pages/          # Landing, Dashboard, Transactions, Compliance, Pay Demo, etc.
 │       ├── components/     # Navbar, Footer, AppLayout, StatsCard
 │       └── services/       # API client, WASM prover wrapper
 ├── wallet-wasm/            # WASM-compiled ZK prover (wasm-bindgen)
@@ -101,7 +124,7 @@ aframp/
 | Proving System | arkworks 0.4 + Groth16 (BN254) |
 | Smart Contracts | Soroban (Stellar Protocol 25+) |
 | Backend API | Rust + Axum + Tokio |
-| Frontend | React 19 + Vite + TypeScript + Tailwind v4 |
+| Frontend | React 19 + Vite + TypeScript + Tailwind v4 + framer-motion |
 | Client-Side ZK | WASM (wasm-bindgen, 237 KB) |
 | Data Fetching | TanStack React Query |
 | Charts | Chart.js + Recharts |
@@ -139,11 +162,13 @@ CONTRACT_ID=CA23SNSLINP3SFVUUCRWNHDNKWYQ23UFURUOTZDZMNSOKM2O63V2MP2Y \
 ./target/debug/merchant-api
 ```
 
-Open **http://localhost:3000** → Click **"Get Started"** → Follow the onboarding wizard.
+Open [https://aframpwallet.vercel.app/](https://aframpwallet.vercel.app/) → Click **"Launch Console"** → Explore the dashboard.
+
+For local development, open **http://localhost:5173** (Vite dev server proxies API to port 3000).
 
 ### Generate a Proof (Client-Side WASM Demo)
 
-Visit **http://localhost:3000/pay** after starting the server:
+Visit **/pay** on the deployed app or local dev server:
 
 1. Enter a merchant seed hex
 2. Enter an amount
@@ -209,7 +234,7 @@ The Soroban contract (`privacy-contract/`) exposes:
 | `privacy-circuits/` | ~250 | ZK circuit with 3 R1CS constraints |
 | `privacy-contract/` | ~390 | Soroban Groth16 verifier, 6 passing tests |
 | `merchant-api/` | ~700 | Axum API server, 14 routes |
-| `merchant-dashboard/` | ~2,000 | React SPA, 11 pages |
+| `merchant-dashboard/` | ~2,000 | React SPA, 11 pages + landing with framer-motion animations |
 | `wallet-wasm/` | ~65 | WASM-compiled prover (237 KB) |
 | `privacy-cli/` | ~280 | Terminal CLI |
 | `pos-client/` | ~330 | POS TUI |
