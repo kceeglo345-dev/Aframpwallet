@@ -1,6 +1,9 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MerchantAPI } from '../services/api';
-import { Link } from 'react-router-dom';
+import { Card, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 
 export default function Dashboard() {
   const { data: statsData } = useQuery({
@@ -8,163 +11,315 @@ export default function Dashboard() {
     queryFn: MerchantAPI.getDashboardStats,
   });
 
-  const stats = [
-    { label: 'Total Volume', value: statsData?.total_volume_usd || '$12,432.00', change: '+12.5%', positive: true, icon: '💰' },
-    { label: 'Transactions', value: String(statsData?.transaction_count ?? '847'), change: '+8.2%', positive: true, icon: '📊' },
-    { label: 'Active Customers', value: '128', change: '+3.1%', positive: true, icon: '👥' },
-    { label: 'Avg. Transaction', value: statsData?.average_transaction || '$14.68', change: '-2.4%', positive: false, icon: '📈' },
+  const [chartRange, setChartRange] = useState<'30 Days' | '7 Days' | '24 Hours'>('30 Days');
+
+  const statsCards = [
+    {
+      title: "Total Balance (NGN)",
+      value: "₦45,230,000",
+      trend: "+12.5%",
+      trendTextColor: "text-green-400",
+      trendBgColor: "bg-[#14532d4c]",
+      positive: true,
+    },
+    {
+      title: "Stablecoin Balance (USDC)",
+      value: statsData?.total_volume_usd || "$28,400.50",
+      trend: "+5.2%",
+      trendTextColor: "text-green-400",
+      trendBgColor: "bg-[#14532d4c]",
+      positive: true,
+    },
+    {
+      title: "Pending Payouts",
+      value: "$1,200.00",
+      trend: "-2.1%",
+      trendTextColor: "text-orange-400",
+      trendBgColor: "bg-[#7c2d124c]",
+      positive: false,
+    },
   ];
 
-  const quickActions = [
-    { label: 'New Distribution', desc: 'Send tokens to multiple recipients', href: '/distribution', icon: '📤' },
-    { label: 'Create Stream', desc: 'Set up continuous payment', href: '/pay', icon: '⚡' },
-    { label: 'Offramp to Fiat', desc: 'Convert crypto to local currency', href: '/compliance', icon: '🏦' },
-    { label: 'View History', desc: 'Check transaction records', href: '/transactions', icon: '📋' },
+  const activities = [
+    {
+      transactionId: "#TRX-8821",
+      type: "Deposit (USDC)",
+      date: "Oct 24, 2023 at 4:30 PM",
+      status: "Completed",
+      statusClassName: "bg-[#14532d4c] text-green-400",
+      amount: "+ $4,500.00",
+    },
+    {
+      transactionId: "#TRX-8820",
+      type: "Payout (NGN)",
+      date: "Oct 24, 2023 at 2:15 PM",
+      status: "Processing",
+      statusClassName: "bg-[#713f124c] text-yellow-400",
+      amount: "- ₦1,250,000",
+    },
+    {
+      transactionId: "#TRX-8819",
+      type: "Bill Payment",
+      date: "Oct 23, 2023 at 10:45 AM",
+      status: "Completed",
+      statusClassName: "bg-[#14532d4c] text-green-400",
+      amount: "- $350.00",
+    },
+    {
+      transactionId: "#TRX-8818",
+      type: "Deposit (USDC)",
+      date: "Oct 22, 2023 at 6:20 PM",
+      status: "Completed",
+      statusClassName: "bg-[#14532d4c] text-green-400",
+      amount: "+ $12,000.00",
+    },
+    {
+      transactionId: "#TRX-8817",
+      type: "Payout (NGN)",
+      date: "Oct 22, 2023 at 9:00 AM",
+      status: "Failed",
+      statusClassName: "bg-[#7f1d1d4c] text-red-400",
+      amount: "- ₦500,000",
+    },
   ];
 
-  const recentActivity = [
-    { action: 'Payment received', amount: '$42.00', time: '2 min ago', status: 'confirmed', customer: '0x4f...8a2c' },
-    { action: 'Payment received', amount: '$156.00', time: '15 min ago', status: 'confirmed', customer: '0x9b...3e1d' },
-    { action: 'Viewing key generated', amount: '', time: '1 hour ago', status: 'info', customer: '' },
-    { action: 'Compliance report exported', amount: '', time: '3 hours ago', status: 'info', customer: '' },
-    { action: 'Payment received', amount: '$89.50', time: '5 hours ago', status: 'confirmed', customer: '0x2c...7f4a' },
-    { action: 'Payment received', amount: '$234.00', time: '8 hours ago', status: 'confirmed', customer: '0x8d...1b9e' },
-  ];
+  const chartLabels = ["Oct 1", "Oct 5", "Oct 10", "Oct 15", "Oct 20", "Oct 25", "Oct 30"];
 
   return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-[#111118] border border-white/8 rounded-2xl p-5 hover:border-[#2ed42b]/20 transition-colors"
+    <main className="flex min-h-screen w-full flex-col items-start gap-8 p-6 md:p-8">
+      {/* Header */}
+      <header className="flex w-full items-start justify-between gap-6 bg-transparent max-md:flex-col max-md:items-start">
+        <div className="flex flex-col items-start gap-1">
+          <h1 className="text-3xl font-normal leading-9 tracking-[-0.75px] text-white">
+            Dashboard Overview
+          </h1>
+          <p className="text-base leading-6 text-[#13ec5bb2]">
+            Welcome back, Global Ventures Ltd.
+          </p>
+        </div>
+        <nav className="flex items-start gap-3 max-sm:w-full max-sm:flex-col">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-auto gap-2 rounded-lg border border-slate-700 bg-[#182e21] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#1d3527] hover:text-white"
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">{stat.label}</span>
-              <span className="text-base">{stat.icon}</span>
-            </div>
-            <p className="text-2xl font-bold text-white">{stat.value}</p>
-            <div className="mt-2 flex items-center gap-1.5">
-              <span className={`text-xs font-medium ${stat.positive ? 'text-[#2ed42b]' : 'text-red-400'}`}>
-                {stat.positive ? '↑' : '↓'} {stat.change}
-              </span>
-              <span className="text-xs text-gray-600">vs last week</span>
-            </div>
-          </div>
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            </svg>
+            Export Report
+          </Button>
+          <Button
+            type="button"
+            className="h-auto gap-2 rounded-lg bg-[#13ec5b] px-4 py-2.5 text-sm font-bold text-slate-900 hover:bg-[#13ec5b]"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            New Transaction
+          </Button>
+        </nav>
+      </header>
+
+      {/* Stats Cards */}
+      <section className="relative flex w-full flex-1 items-start justify-center gap-6 max-md:grid max-md:grid-cols-1">
+        {statsCards.map((card) => (
+          <Card
+            key={card.title}
+            className="relative flex flex-1 grow self-stretch overflow-hidden rounded-2xl border border-slate-800 bg-[#182e21] shadow-[0px_1px_2px_#0000000d]"
+          >
+            <CardContent className="flex w-full flex-1 flex-col justify-between p-6">
+              <header className="flex flex-col items-start gap-2">
+                <h3 className="text-base font-medium leading-6 text-slate-400">
+                  {card.title}
+                </h3>
+                <p className="text-3xl font-bold leading-9 tracking-[-0.75px] text-white">
+                  {card.value}
+                </p>
+              </header>
+              <footer className="pt-4">
+                <div className="flex items-center gap-2">
+                  <div className={`inline-flex items-center rounded-full px-2 py-1 ${card.trendBgColor}`}>
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d={card.positive ? "M12 19.5v-15m0 0l-6 6m6-6l6 6" : "M12 4.5v15m0 0l6-6m-6 6l-6-6"} />
+                    </svg>
+                    <span className={`relative ml-1 flex h-4 items-center whitespace-nowrap text-xs font-bold ${card.trendTextColor}`}>
+                      {card.trend}
+                    </span>
+                  </div>
+                  <p className="text-xs font-normal leading-4 text-slate-400">
+                    vs last month
+                  </p>
+                </div>
+              </footer>
+            </CardContent>
+          </Card>
         ))}
-      </div>
+      </section>
 
-      {/* Quick Actions */}
-      <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
-        <h2 className="text-base font-semibold text-white mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {quickActions.map((action) => (
-            <Link
-              key={action.label}
-              to={action.href}
-              className="group flex flex-col gap-2 p-4 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-[#2ed42b]/25 hover:bg-[#2ed42b]/5 transition-all"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xl">{action.icon}</span>
-                <svg className="w-4 h-4 text-gray-700 group-hover:text-[#2ed42b] transition-colors" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+      {/* Chart Section */}
+      <section className="w-full self-stretch">
+        <Card className="w-full self-stretch rounded-2xl border border-slate-800 bg-[#182e21] shadow-[0px_1px_2px_#0000000d]">
+          <CardContent className="flex w-full flex-col gap-6 px-6 pt-6 pb-0">
+            <header className="flex w-full items-start justify-between gap-4">
+              <div className="flex flex-col items-start gap-1">
+                <h2 className="text-lg font-bold leading-7 text-white">
+                  Transaction Volume
+                </h2>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-bold leading-8 text-white">
+                    $142,050
+                  </p>
+                  <p className="pl-2 text-sm font-medium leading-5 text-[#13ec5b]">
+                    +8.5% this month
+                  </p>
+                </div>
+              </div>
+              <div className="inline-flex items-start rounded-lg bg-black/20 p-1">
+                {(['30 Days', '7 Days', '24 Hours'] as const).map((option) => {
+                  const isActive = chartRange === option;
+                  return (
+                    <button
+                      key={option}
+                      onClick={() => setChartRange(option)}
+                      className={`h-auto rounded px-3 py-1 text-center text-xs font-normal leading-4 transition-colors ${
+                        isActive
+                          ? 'bg-white/10 text-white shadow-[0px_1px_2px_#0000000d]'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  );
+                })}
+              </div>
+            </header>
+            <div className="flex h-[264px] w-full flex-col items-start gap-2">
+              <div className="h-60 w-full self-stretch relative">
+                {/* Chart visualization */}
+                <svg className="w-full h-full" viewBox="0 0 800 240" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="#13ec5b" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="#13ec5b" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d="M0,200 C50,180 100,150 150,160 C200,170 250,120 300,100 C350,80 400,90 450,70 C500,50 550,60 600,40 C650,20 700,30 800,50 L800,240 L0,240 Z"
+                    fill="url(#chartGradient)"
+                  />
+                  <path
+                    d="M0,200 C50,180 100,150 150,160 C200,170 250,120 300,100 C350,80 400,90 450,70 C500,50 550,60 600,40 C650,20 700,30 800,50"
+                    fill="none"
+                    stroke="#13ec5b"
+                    strokeWidth="2"
+                  />
                 </svg>
               </div>
-              <div>
-                <p className="text-sm font-semibold text-white">{action.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{action.desc}</p>
+              <div className="flex w-full items-start justify-between pl-2 pr-2">
+                {chartLabels.map((label) => (
+                  <span
+                    key={label}
+                    className="text-xs font-normal leading-4 text-slate-400"
+                  >
+                    {label}
+                  </span>
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        <div className="lg:col-span-2 bg-[#111118] border border-white/8 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold text-white">Recent Activity</h2>
-            <Link to="/transactions" className="text-xs text-[#2ed42b] hover:text-[#22b020] font-medium">View all →</Link>
-          </div>
-          <div className="space-y-2">
-            {recentActivity.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between px-4 py-3 rounded-xl bg-[#0d0d14] border border-white/5 hover:border-white/10 transition-colors"
+      {/* Recent Activity */}
+      <section className="w-full">
+        <Card className="w-full overflow-hidden rounded-2xl border border-slate-800 bg-[#182e21] text-white shadow-[0px_1px_2px_#0000000d]">
+          <CardContent className="p-0">
+            <header className="flex items-center justify-between border-b border-slate-800 px-6 py-6">
+              <h2 className="text-lg font-bold leading-7 text-white">
+                Recent Activity
+              </h2>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-sm font-normal leading-5 text-[#13ec5b] no-underline hover:text-[#13ec5b]"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full ${item.status === 'confirmed' ? 'bg-[#2ed42b]' : 'bg-gray-600'}`} />
-                  <div>
-                    <span className="text-sm text-gray-300">{item.action}</span>
-                    {item.customer && (
-                      <span className="text-xs text-gray-600 ml-2 font-mono">{item.customer}</span>
-                    )}
+                View All
+              </Button>
+            </header>
+            <div className="w-full overflow-x-auto">
+              <div className="grid grid-cols-5 min-w-[800px] border-b border-slate-800 bg-white/5">
+                {['TRANSACTION ID', 'TYPE', 'DATE', 'STATUS', 'AMOUNT'].map((label, i) => (
+                  <div
+                    key={label}
+                    className={`px-6 py-4 text-xs font-normal leading-4 tracking-[0.60px] text-slate-400 ${i === 4 ? 'text-right' : 'text-left'}`}
+                  >
+                    {label}
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  {item.amount && (
-                    <span className="text-sm font-semibold text-white">{item.amount}</span>
-                  )}
-                  <span className="text-xs text-gray-600">{item.time}</span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Privacy Status */}
-        <div className="bg-[#111118] border border-white/8 rounded-2xl p-6">
-          <h2 className="text-base font-semibold text-white mb-5">Privacy Status</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-[#2ed42b]/8 border border-[#2ed42b]/15">
-              <div className="flex items-center gap-2">
-                <svg className="w-4 h-4 text-[#2ed42b]" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-                </svg>
-                <span className="text-sm text-[#2ed42b] font-medium">ZK Proofs Active</span>
-              </div>
-              <span className="text-xs text-[#2ed42b]">100%</span>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                { label: 'Proofs Generated', value: '847', total: '1000' },
-                { label: 'Nullifiers Used', value: '847', total: '847' },
-                { label: 'Viewing Keys', value: '3', total: '5' },
-              ].map((item) => (
-                <div key={item.label}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-gray-500">{item.label}</span>
-                    <span className="text-xs text-gray-400 font-mono">{item.value}/{item.total}</span>
-                  </div>
-                  <div className="h-1.5 bg-[#0d0d14] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-[#2ed42b] to-[#2ed42b] rounded-full"
-                      style={{ width: `${(parseInt(item.value) / parseInt(item.total)) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-3 border-t border-white/5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Contract</span>
-                <span className="text-gray-400 font-mono">CA23...MP2Y</span>
-              </div>
-              <div className="flex items-center justify-between text-xs mt-2">
-                <span className="text-gray-500">Network</span>
-                <span className="text-gray-400">Stellar Testnet</span>
-              </div>
-              <div className="flex items-center justify-between text-xs mt-2">
-                <span className="text-gray-500">Settlement</span>
-                <span className="text-[#2ed42b]">3-5s avg</span>
+              <div className="flex flex-col">
+                {activities.map((activity, index) => (
+                  <article
+                    key={activity.transactionId}
+                    className={`grid grid-cols-5 min-w-[800px] items-center ${index !== 0 ? 'border-t border-slate-800' : ''}`}
+                  >
+                    <div className="px-6 py-4">
+                      <p className="text-base font-medium leading-[22px] text-white">
+                        {activity.transactionId}
+                      </p>
+                    </div>
+                    <div className="px-6 py-4">
+                      <p className="text-sm font-normal leading-5 text-slate-300">
+                        {activity.type}
+                      </p>
+                    </div>
+                    <div className="px-6 py-4">
+                      <time className="text-sm font-normal leading-5 text-slate-400">
+                        {activity.date}
+                      </time>
+                    </div>
+                    <div className="px-6 py-4">
+                      <Badge
+                        variant="secondary"
+                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium leading-4 border-0 ${activity.statusClassName}`}
+                      >
+                        {activity.status}
+                      </Badge>
+                    </div>
+                    <div className="px-6 py-4 text-right">
+                      <p className="text-base font-bold leading-[22px] text-white">
+                        {activity.amount}
+                      </p>
+                    </div>
+                  </article>
+                ))}
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      {/* Footer */}
+      <Card className="w-full border-0 bg-transparent shadow-none">
+        <CardContent className="flex items-center justify-center px-0 pb-0 pt-2">
+          <footer className="w-full">
+            <p className="text-center text-xs leading-4 text-slate-400">
+              © 2024 AFRAMP. All rights reserved.{' '}
+              <button
+                type="button"
+                className="text-slate-400 transition-colors hover:text-slate-500"
+              >
+                Terms
+              </button>{' '}
+              <button
+                type="button"
+                className="text-slate-400 transition-colors hover:text-slate-500"
+              >
+                Privacy
+              </button>
+            </p>
+          </footer>
+        </CardContent>
+      </Card>
+    </main>
   );
 }
